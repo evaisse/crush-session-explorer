@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+./**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -27,3 +28,6 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+
+out.md
