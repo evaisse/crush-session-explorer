@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 from datetime import datetime
 import re
+import json
 
 from .db import connect, fetch_session, list_sessions, list_messages
 from .markdown import render_markdown
@@ -55,15 +56,20 @@ def main(argv: list[str] | None = None) -> int:
             session_id = sessions[int(sel) - 1].id
         session = fetch_session(conn, session_id)
         msgs = list_messages(conn, session.id)
-        parts_text = []
         for m in msgs:
-            if m["parts"]:
-                for p in m["parts"]:
-                    if isinstance(p, str):
-                        parts_text.append(p)
-                    elif isinstance(p, dict) and "text" in p:
-                        parts_text.append(str(p["text"]))
-        session.content = "\n\n".join([t for t in parts_text if t])
+            extracted = []
+            for p in m.get("parts") or []:
+                if isinstance(p, dict):
+                    if p.get("type") == "text" and isinstance(p.get("data"), dict):
+                        t = p["data"].get("text")
+                        if t:
+                            extracted.append(t)
+                    elif "text" in p:
+                        extracted.append(str(p["text"]))
+                elif isinstance(p, str):
+                    extracted.append(p)
+            m["parts"] = extracted
+        session.content = json.dumps(msgs, ensure_ascii=False)
         out_path = args.out
         if not out_path:
             base = slugify(session.title or f"session-{session.id[:8]}")

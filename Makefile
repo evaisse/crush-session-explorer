@@ -1,53 +1,101 @@
-PY=python3
-PIP=$(PY) -m pip
-VENV=.venv
-ACT=. $(VENV)/bin/activate
+.PHONY: build clean test lint vet fmt deps install run
 
-.DEFAULT_GOAL := help
+# Build variables
+BINARY_NAME=crush-md
+BUILD_DIR=bin
+CMD_DIR=cmd/crush-md
 
-.PHONY: help venv install lint fmt typecheck test export build clean
+# Go variables
+GOCMD=go
+GOBUILD=$(GOCMD) build
+GOCLEAN=$(GOCMD) clean
+GOTEST=$(GOCMD) test
+GOGET=$(GOCMD) get
+GOMOD=$(GOCMD) mod
+GOFMT=gofmt
+GOVET=$(GOCMD) vet
 
+# Build the application
+build:
+	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR)
+
+# Build for multiple platforms
+build-all: build-linux build-darwin build-windows
+
+build-linux:
+	GOOS=linux GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-linux-amd64 ./$(CMD_DIR)
+
+build-darwin:
+	GOOS=darwin GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-amd64 ./$(CMD_DIR)
+	GOOS=darwin GOARCH=arm64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-darwin-arm64 ./$(CMD_DIR)
+
+build-windows:
+	GOOS=windows GOARCH=amd64 $(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME)-windows-amd64.exe ./$(CMD_DIR)
+
+# Install dependencies
+deps:
+	$(GOMOD) download
+	$(GOMOD) tidy
+
+# Install the binary
+install: build
+	$(GOCMD) install ./$(CMD_DIR)
+
+# Run the application
+run:
+	$(GOBUILD) -o $(BUILD_DIR)/$(BINARY_NAME) ./$(CMD_DIR) && ./$(BUILD_DIR)/$(BINARY_NAME)
+
+# Clean build artifacts
+clean:
+	$(GOCLEAN)
+	rm -rf $(BUILD_DIR)
+
+# Run tests
+test:
+	$(GOTEST) -v ./...
+
+# Run tests with coverage
+test-coverage:
+	$(GOTEST) -v -coverprofile=coverage.out ./...
+	$(GOCMD) tool cover -html=coverage.out -o coverage.html
+
+# Format code
+fmt:
+	$(GOFMT) -s -w .
+
+# Vet code
+vet:
+	$(GOVET) ./...
+
+# Lint code (requires golangci-lint)
+lint:
+	golangci-lint run
+
+# Check code quality
+check: fmt vet test
+
+# Development setup
+dev-setup: deps
+	$(GOCMD) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+# Quick development build and test
+dev: fmt vet test build
+
+# Help
 help:
 	@echo "Available targets:"
-	@echo "  venv        Create virtualenv (.venv)"
-	@echo "  install     Install dev deps (ruff, pyright, pytest, pyinstaller)"
-	@echo "  lint        Run ruff lint"
-	@echo "  fmt         Run ruff format"
-	@echo "  typecheck   Run pyright"
-	@echo "  test        Run pytest"
-	@echo "  export      Export markdown (SESSION, OUT)"
-	@echo "  build       Build standalone binary with PyInstaller -> dist/crush-md"
-	@echo "  clean       Clean venv, caches, build artifacts"
-
-venv:
-	$(PY) -m venv $(VENV)
-	$(ACT) && $(PY) -m pip install -U pip
-
-install:
-	$(ACT) && $(PIP) install -r requirements.txt || true
-	$(ACT) && $(PIP) install ruff pyright pytest pyinstaller
-
-lint:
-	$(ACT) && ruff check .
-
-fmt:
-	$(ACT) && ruff format .
-
-typecheck:
-	$(ACT) && pyright
-
-test:
-	$(ACT) && pytest -q
-
-export:
-	$(ACT) && CMD="$(PY) -m crush_md.cli export --db ./.crush/crush.db"; \
-	[ -n "$(SESSION)" ] && CMD="$$CMD --session $(SESSION)"; \
-	[ -n "$(OUT)" ] && CMD="$$CMD --out $(OUT)"; \
-	eval "$$CMD"
-
-build:
-	$(ACT) && pyinstaller -F -n crush-md -p . crush_md/cli.py
-	@echo "Binary: dist/crush-md"
-
-clean:
-	rm -rf $(VENV) __pycache__ .pytest_cache .ruff_cache .pyright build dist *.spec
+	@echo "  build          - Build the application"
+	@echo "  build-all      - Build for all platforms"
+	@echo "  deps           - Download and tidy dependencies"
+	@echo "  install        - Install the binary"
+	@echo "  run            - Build and run the application"
+	@echo "  clean          - Clean build artifacts"
+	@echo "  test           - Run tests"
+	@echo "  test-coverage  - Run tests with coverage report"
+	@echo "  fmt            - Format code"
+	@echo "  vet            - Vet code"
+	@echo "  lint           - Lint code (requires golangci-lint)"
+	@echo "  check          - Run format, vet, and test"
+	@echo "  dev-setup      - Setup development environment"
+	@echo "  dev            - Quick development build and test"
+	@echo "  help           - Show this help"

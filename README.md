@@ -1,6 +1,8 @@
 # Crush Session Explorer
 
-A Python CLI tool for exporting Crush chat sessions from SQLite databases to Markdown format with YAML frontmatter.
+A CLI tool for exporting Crush chat sessions from SQLite databases to Markdown format with YAML frontmatter.
+
+Available in both **Python** and **Go** implementations with identical functionality.
 
 ## Overview
 
@@ -8,28 +10,28 @@ This tool allows you to extract and export individual chat sessions from Crush's
 
 ## Features
 
-- 📊 **SQLite Integration**: Direct access to Crush database using Python's built-in sqlite3
+- 📊 **SQLite Integration**: Direct access to Crush database using built-in SQLite support
 - 📝 **Markdown Export**: Clean conversion to Markdown with YAML frontmatter
 - 🔍 **Interactive Session Selection**: Browse and select sessions interactively
 - 📅 **Timestamp Formatting**: Automatic timestamp conversion to readable formats
 - 🏷️ **Metadata Preservation**: Session metadata and message details preserved
-- 🎯 **Type Safety**: Full type annotations with pyright compatibility
-- ✅ **Well Tested**: Comprehensive test suite with pytest
+- 🎯 **Type Safety**: Full type annotations (Python: pyright, Go: built-in)
+- ✅ **Well Tested**: Comprehensive test coverage
+- 🚀 **Dual Implementation**: Available in both Python and Go with identical CLI interface
 
 ## Requirements
 
+### Python Implementation
 - **Python 3.10+**
 - **sqlite3** (included in Python standard library)
 
-### Development Dependencies
-
-```bash
-pip install ruff pyright pytest
-```
+### Go Implementation  
+- **Go 1.19+**
+- **CGO enabled** (for SQLite driver)
 
 ## Installation
 
-Clone the repository and set up the environment:
+### Python Setup
 
 ```bash
 git clone <repository-url>
@@ -40,18 +42,47 @@ pip install -U pip
 pip install -r requirements.txt
 ```
 
+### Go Setup
+
+```bash
+git clone <repository-url>
+cd crush-session-explorer
+go mod download
+make build
+```
+
+Or install directly:
+```bash
+go install ./cmd/crush-md
+```
+
 ## Usage
+
+The CLI interface is identical for both Python and Go implementations.
 
 ### Export a Specific Session
 
+**Python:**
 ```bash
 python -m crush_md export --db ./.crush/crush.db --session <session-id> --out output.md
 ```
 
+**Go:**
+```bash
+./bin/crush-md export --db ./.crush/crush.db --session <session-id> --out output.md
+# or if installed: crush-md export --db ./.crush/crush.db --session <session-id> --out output.md
+```
+
 ### Interactive Session Selection
 
+**Python:**
 ```bash
 python -m crush_md export --db ./.crush/crush.db
+```
+
+**Go:**
+```bash
+./bin/crush-md export --db ./.crush/crush.db
 ```
 
 This will display a list of recent sessions for you to choose from:
@@ -110,38 +141,72 @@ I'd be happy to help explain the code structure...
 
 ```
 crush-session-explorer/
-├── crush_md/
-│   ├── __init__.py          # Package initialization
-│   ├── cli.py               # Command-line interface and main logic
-│   ├── db.py                # SQLite database operations and models
-│   └── markdown.py          # Markdown rendering and formatting
-├── tests/
-│   ├── test_db.py           # Database functionality tests
-│   └── test_markdown.py     # Markdown rendering tests
-├── requirements.txt         # Development dependencies
-├── README.md               # This file
-└── Makefile                # Build and development commands
+├── crush_md/                     # Python implementation
+│   ├── __init__.py               # Package initialization
+│   ├── cli.py                    # Command-line interface and main logic
+│   ├── db.py                     # SQLite database operations and models
+│   └── markdown.py               # Markdown rendering and formatting
+├── cmd/                          # Go implementation
+│   └── crush-md/
+│       └── main.go               # Go CLI entry point
+├── internal/                     # Go internal packages
+│   ├── cli/
+│   │   └── export.go             # Export command implementation
+│   ├── db/
+│   │   ├── connection.go         # Database connection
+│   │   ├── models.go             # Data models
+│   │   └── queries.go            # Database queries
+│   └── markdown/
+│       ├── renderer.go           # Markdown rendering
+│       └── utils.go              # Utility functions
+├── tests/                        # Python tests
+│   ├── test_db.py                # Database functionality tests
+│   └── test_markdown.py          # Markdown rendering tests
+├── bin/                          # Go build output (created by make build)
+├── go.mod                        # Go module definition
+├── go.sum                        # Go dependencies
+├── requirements.txt              # Python dependencies
+├── README.md                     # This file
+└── Makefile                      # Build and development commands
 ```
 
 ## Development
 
-### Running Tests
+### Python Development
 
+**Running Tests:**
 ```bash
 pytest -q
 ```
 
-### Code Quality
-
-**Linting and Formatting:**
+**Code Quality:**
 ```bash
 ruff check .
 ruff format .
+pyright
 ```
 
-**Type Checking:**
+### Go Development
+
+**Building:**
 ```bash
-pyright
+make build          # Build for current platform
+make build-all      # Build for all platforms
+make dev            # Format, vet, test, and build
+```
+
+**Testing:**
+```bash
+make test           # Run tests
+make test-coverage  # Run tests with coverage
+```
+
+**Code Quality:**
+```bash
+make fmt            # Format code
+make vet            # Vet code
+make lint           # Lint code (requires golangci-lint)
+make check          # Run format, vet, and test
 ```
 
 ### Making Changes
