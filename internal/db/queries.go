@@ -75,25 +75,28 @@ func ListMessages(db *sql.DB, sessionID string) ([]ParsedMessage, error) {
 
 	var messages []ParsedMessage
 	for rows.Next() {
-		var m Message
-		err := rows.Scan(&m.ID, &m.Role, &m.Parts, &m.Model, &m.Provider, &m.CreatedAt)
+		var id, role string
+		var partsJSON *string
+		var model, provider, createdAt *string
+		
+		err := rows.Scan(&id, &role, &partsJSON, &model, &provider, &createdAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
 		}
 
 		// Parse the JSON parts
 		parsed := ParsedMessage{
-			ID:        m.ID,
-			Role:      m.Role,
-			Model:     m.Model,
-			Provider:  m.Provider,
-			CreatedAt: m.CreatedAt,
+			ID:        id,
+			Role:      role,
+			Model:     model,
+			Provider:  provider,
+			CreatedAt: createdAt,
 		}
 
 		// Parse parts JSON
-		if m.Parts != nil {
+		if partsJSON != nil && *partsJSON != "" {
 			var rawParts []interface{}
-			if err := json.Unmarshal(m.Parts, &rawParts); err == nil {
+			if err := json.Unmarshal([]byte(*partsJSON), &rawParts); err == nil {
 				for _, part := range rawParts {
 					switch p := part.(type) {
 					case string:
