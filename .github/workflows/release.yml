@@ -9,7 +9,36 @@ permissions:
   contents: write
 
 jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      is-master: ${{ steps.check.outputs.is-master }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if tag is on master branch
+        id: check
+        run: |
+          # Get the commit hash of the tag
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref }})
+          
+          # Check if this commit is on master branch
+          if git merge-base --is-ancestor $TAG_COMMIT origin/master && \
+             git merge-base --is-ancestor origin/master $TAG_COMMIT; then
+            echo "is-master=true" >> $GITHUB_OUTPUT
+            echo "✅ Tag is on master branch"
+          else
+            echo "is-master=false" >> $GITHUB_OUTPUT
+            echo "❌ Tag is not on master branch"
+            exit 1
+          fi
+
   test:
+    needs: check-branch
+    if: needs.check-branch.outputs.is-master == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,7 +56,8 @@ jobs:
         run: make test
 
   build:
-    needs: test
+    needs: [check-branch, test]
+    if: needs.check-branch.outputs.is-master == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -77,7 +107,8 @@ jobs:
           path: bin/crush-md-${{ matrix.suffix }}
 
   release:
-    needs: build
+    needs: [check-branch, build]
+    if: needs.check-branch.outputs.is-master == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
