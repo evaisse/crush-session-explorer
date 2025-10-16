@@ -35,6 +35,8 @@ func ExportCmd() *cobra.Command {
 		Short: "Export session to markdown or HTML",
 		Long:  "Export a Crush session from SQLite database to Markdown or HTML format",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Check if format was explicitly provided
+			formatExplicit := cmd.Flags().Changed("format")
 			// Connect to database
 			database, err := db.Connect(dbPath)
 			if err != nil {
@@ -103,14 +105,38 @@ func ExportCmd() *cobra.Command {
 				session.Content = &contentStr
 			}
 
-			// Validate format
-			if format != "markdown" && format != "html" && format != "md" {
-				return fmt.Errorf("invalid format: %s (supported: markdown, html, md)", format)
-			}
+			// Interactive format selection if not explicitly provided
+			if !formatExplicit {
+				fmt.Println("Choose export format:")
+				fmt.Println("1. Markdown (.md)")
+				fmt.Println("2. HTML with interactive panels (.html)")
+				
+				fmt.Print("Select format [1-2]: ")
+				reader := bufio.NewReader(os.Stdin)
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					return fmt.Errorf("failed to read input: %w", err)
+				}
 
-			// Normalize format
-			if format == "md" {
-				format = "markdown"
+				choice := strings.TrimSpace(input)
+				switch choice {
+				case "1", "":
+					format = "markdown"
+				case "2":
+					format = "html"
+				default:
+					return fmt.Errorf("invalid choice: %s (choose 1 or 2)", choice)
+				}
+			} else {
+				// Validate format when explicitly provided
+				if format != "markdown" && format != "html" && format != "md" {
+					return fmt.Errorf("invalid format: %s (supported: markdown, html, md)", format)
+				}
+
+				// Normalize format
+				if format == "md" {
+					format = "markdown"
+				}
 			}
 
 			// Generate output path if not provided
@@ -165,7 +191,7 @@ func ExportCmd() *cobra.Command {
 	cmd.Flags().StringVar(&dbPath, "db", ".crush/crush.db", "Path to sqlite database")
 	cmd.Flags().StringVar(&sessionID, "session", "", "Session ID to export")
 	cmd.Flags().StringVar(&outputPath, "out", "", "Output file path")
-	cmd.Flags().StringVar(&format, "format", "markdown", "Output format: markdown, html, md")
+	cmd.Flags().StringVar(&format, "format", "markdown", "Output format: markdown, html, md (interactive selection if not specified)")
 
 	return cmd
 }
