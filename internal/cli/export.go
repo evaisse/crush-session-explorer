@@ -28,11 +28,12 @@ func ExportCmd() *cobra.Command {
 	var dbPath string
 	var sessionID string
 	var outputPath string
+	var format string
 
 	cmd := &cobra.Command{
 		Use:   "export",
-		Short: "Export session to markdown",
-		Long:  "Export a Crush session from SQLite database to Markdown format with YAML frontmatter",
+		Short: "Export session to markdown or HTML",
+		Long:  "Export a Crush session from SQLite database to Markdown or HTML format",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Connect to database
 			database, err := db.Connect(dbPath)
@@ -102,9 +103,24 @@ func ExportCmd() *cobra.Command {
 				session.Content = &contentStr
 			}
 
+			// Validate format
+			if format != "markdown" && format != "html" && format != "md" {
+				return fmt.Errorf("invalid format: %s (supported: markdown, html, md)", format)
+			}
+
+			// Normalize format
+			if format == "md" {
+				format = "markdown"
+			}
+
 			// Generate output path if not provided
 			if outputPath == "" {
-				filename := markdown.GenerateFilename(session)
+				var filename string
+				if format == "html" {
+					filename = markdown.GenerateHTMLFilename(session)
+				} else {
+					filename = markdown.GenerateFilename(session)
+				}
 				defaultDir := ".crush/sessions"
 				defaultPath := filepath.Join(defaultDir, filename)
 
@@ -123,8 +139,13 @@ func ExportCmd() *cobra.Command {
 				}
 			}
 
-			// Render markdown
-			markdownContent := markdown.RenderMarkdown(session, messages)
+			// Render content based on format
+			var content string
+			if format == "html" {
+				content = markdown.RenderHTML(session, messages)
+			} else {
+				content = markdown.RenderMarkdown(session, messages)
+			}
 
 			// Ensure output directory exists
 			if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
@@ -132,7 +153,7 @@ func ExportCmd() *cobra.Command {
 			}
 
 			// Write file
-			if err := os.WriteFile(outputPath, []byte(markdownContent), 0644); err != nil {
+			if err := os.WriteFile(outputPath, []byte(content), 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %w", err)
 			}
 
@@ -143,7 +164,8 @@ func ExportCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&dbPath, "db", ".crush/crush.db", "Path to sqlite database")
 	cmd.Flags().StringVar(&sessionID, "session", "", "Session ID to export")
-	cmd.Flags().StringVar(&outputPath, "out", "", "Output markdown file path")
+	cmd.Flags().StringVar(&outputPath, "out", "", "Output file path")
+	cmd.Flags().StringVar(&format, "format", "markdown", "Output format: markdown, html, md")
 
 	return cmd
 }

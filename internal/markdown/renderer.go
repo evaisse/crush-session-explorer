@@ -18,8 +18,8 @@ func yamlEscape(s string) string {
 	return s
 }
 
-// formatTimestamp formats a timestamp for display
-func formatTimestamp(ts *string) string {
+// FormatTimestamp formats a timestamp for display
+func FormatTimestamp(ts *string) string {
 	if ts == nil || *ts == "" {
 		return ""
 	}
@@ -120,7 +120,7 @@ func RenderMarkdown(session *db.Session, messages []db.ParsedMessage) string {
 	for _, msg := range messages {
 		// Generate header
 		role := msg.Role
-		ts := formatTimestamp(msg.CreatedAt)
+		ts := FormatTimestamp(msg.CreatedAt)
 		header := fmt.Sprintf("## %s — %s", role, ts)
 
 		// Add model/provider info if available
