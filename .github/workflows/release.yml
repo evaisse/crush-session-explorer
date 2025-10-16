@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,21 +20,82 @@ jobs:
         with:
           go-version: '1.23.4'
 
-      - name: Get version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Install dependencies
         run: make deps
 
       - name: Run tests
         run: make test
 
-      - name: Build for all platforms
-        run: make build-all
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64.exe
+          - goos: windows
+            goarch: arm64
+            suffix: windows-arm64.exe
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Create checksums
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.4'
+
+      - name: Install dependencies
+        run: make deps
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
         run: |
+          mkdir -p bin
+          go build -o bin/crush-md-${{ matrix.suffix }} ./cmd/crush-md
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crush-md-${{ matrix.suffix }}
+          path: bin/crush-md-${{ matrix.suffix }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p bin
+          find artifacts -name "crush-md-*" -type f -exec cp {} bin/ \;
           cd bin
           sha256sum * > checksums.txt
 
@@ -47,9 +108,11 @@ jobs:
             
             ### Downloads
             - **Linux (amd64)**: `crush-md-linux-amd64`
+            - **Linux (arm64)**: `crush-md-linux-arm64`
+            - **Windows (amd64)**: `crush-md-windows-amd64.exe`
+            - **Windows (arm64)**: `crush-md-windows-arm64.exe`
             - **macOS (amd64)**: `crush-md-darwin-amd64`  
             - **macOS (arm64)**: `crush-md-darwin-arm64`
-            - **Windows (amd64)**: `crush-md-windows-amd64.exe`
             
             ### Installation
             1. Download the appropriate binary for your platform
