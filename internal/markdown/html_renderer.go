@@ -26,9 +26,6 @@ func RenderHTML(session *db.Session, messages []db.ParsedMessage) string {
 	// Add session metadata
 	result.WriteString(generateSessionInfo(session))
 
-	// Add navigation
-	result.WriteString(generateNavigation(messages))
-
 	// Add conversation container
 	result.WriteString("<div class=\"conversation\">\n")
 
@@ -129,53 +126,6 @@ func generateHTMLHeader(title string) string {
             color: #333;
         }
 
-        .navigation {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .navigation h2 {
-            color: #667eea;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .nav-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .nav-link {
-            padding: 6px 12px;
-            background: #f8f9fa;
-            border-radius: 15px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: #333;
-            transition: all 0.2s ease;
-            font-size: 0.85em;
-        }
-
-        .nav-link:hover {
-            background: #667eea;
-            color: white;
-            transform: translateY(-1px);
-        }
-
-        .nav-link.user {
-            background: #e3f2fd;
-            border-color: #2196f3;
-        }
-
-        .nav-link.assistant {
-            background: #f3e5f5;
-            border-color: #9c27b0;
-        }
 
         .conversation {
             background: white;
@@ -186,8 +136,8 @@ func generateHTMLHeader(title string) string {
 
         .message {
             display: grid;
-            grid-template-columns: 200px 1fr;
-            min-height: 60px;
+            grid-template-columns: 280px 1fr;
+            min-height: 50px;
             border-bottom: 1px solid #f0f0f0;
         }
 
@@ -196,11 +146,12 @@ func generateHTMLHeader(title string) string {
         }
 
         .message-sidebar {
-            padding: 15px;
+            padding: 12px 15px;
             border-right: 1px solid #f0f0f0;
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
         }
 
         .message-sidebar.user {
@@ -217,22 +168,32 @@ func generateHTMLHeader(title string) string {
 
         .role-badge {
             font-weight: bold;
-            font-size: 0.9em;
+            font-size: 0.85em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #333;
+            min-width: 60px;
         }
 
         .message-time {
             font-size: 0.8em;
             color: #666;
             line-height: 1.2;
+            white-space: nowrap;
         }
 
         .message-model {
             font-size: 0.75em;
             color: #888;
             font-style: italic;
+            white-space: nowrap;
+        }
+
+        .message-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
         }
 
         .message-content {
@@ -263,9 +224,10 @@ func generateHTMLHeader(title string) string {
         .anchor-link {
             color: #667eea;
             text-decoration: none;
-            font-size: 0.8em;
+            font-size: 0.75em;
             opacity: 0.7;
             transition: opacity 0.2s ease;
+            font-weight: bold;
         }
 
         .anchor-link:hover {
@@ -315,13 +277,7 @@ func generateHTMLHeader(title string) string {
             .message-sidebar {
                 border-right: none;
                 border-bottom: 1px solid #f0f0f0;
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-            
-            .nav-links {
-                justify-content: center;
+                flex-wrap: wrap;
             }
         }
     </style>
@@ -390,34 +346,6 @@ func generateSessionInfo(session *db.Session) string {
 	return result.String()
 }
 
-// generateNavigation creates the navigation links
-func generateNavigation(messages []db.ParsedMessage) string {
-	var result strings.Builder
-
-	result.WriteString("<div class=\"navigation\">\n")
-	result.WriteString("<h2>Quick Navigation</h2>\n")
-	result.WriteString("<div class=\"nav-links\">\n")
-
-	for i, msg := range messages {
-		timestamp := "Unknown"
-		if msg.CreatedAt != nil {
-			timestamp = FormatTimestamp(msg.CreatedAt)
-		}
-
-		// Create anchor name
-		anchorName := fmt.Sprintf("msg-%d", i+1)
-
-		result.WriteString(fmt.Sprintf(`
-        <a href="#%s" class="nav-link %s" title="%s">
-            #%d %s
-        </a>
-    `, anchorName, html.EscapeString(msg.Role), html.EscapeString(timestamp), 
-		i+1, html.EscapeString(strings.Title(msg.Role))))
-	}
-
-	result.WriteString("</div>\n</div>\n")
-	return result.String()
-}
 
 // generateMessage creates a compact message layout
 func generateMessage(msg db.ParsedMessage, index int) string {
@@ -445,19 +373,21 @@ func generateMessage(msg db.ParsedMessage, index int) string {
     <div class="message" id="%s">
         <div class="message-sidebar %s">
             <div class="role-badge">%s</div>
-            <div class="message-time">%s</div>
+            <div class="message-info">
+                <div class="message-time">%s</div>
 `, anchorName, html.EscapeString(msg.Role), 
 	html.EscapeString(strings.Title(msg.Role)), html.EscapeString(timestamp)))
 
 	// Add model info if available
 	if len(modelInfo) > 0 {
 		result.WriteString(fmt.Sprintf(`
-            <div class="message-model">%s</div>
+                <div class="message-model">%s</div>
 `, html.EscapeString(strings.Join(modelInfo, "/"))))
 	}
 
 	// Add anchor link
 	result.WriteString(fmt.Sprintf(`
+            </div>
             <a href="#%s" class="anchor-link">#%d</a>
         </div>
         <div class="message-content">

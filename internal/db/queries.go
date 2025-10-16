@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // ListSessions retrieves sessions from the database with a limit
@@ -100,16 +101,53 @@ func ListMessages(db *sql.DB, sessionID string) ([]ParsedMessage, error) {
 				for _, part := range rawParts {
 					switch p := part.(type) {
 					case string:
-						parsed.Parts = append(parsed.Parts, p)
+						if strings.TrimSpace(p) != "" {
+							parsed.Parts = append(parsed.Parts, p)
+						}
 					case map[string]interface{}:
-						// Handle object parts with text or data.text
-						if textData, ok := p["text"]; ok {
-							if text, ok := textData.(string); ok {
-								parsed.Parts = append(parsed.Parts, text)
+						// Handle different message types
+						if msgType, ok := p["type"].(string); ok {
+							switch msgType {
+							case "text":
+								// Handle text messages
+								if data, ok := p["data"].(map[string]interface{}); ok {
+									if text, ok := data["text"].(string); ok && strings.TrimSpace(text) != "" {
+										parsed.Parts = append(parsed.Parts, text)
+									}
+								}
+							case "tool_call":
+								// Handle tool calls - show what tool was called
+								if data, ok := p["data"].(map[string]interface{}); ok {
+									if name, ok := data["name"].(string); ok {
+										toolInfo := fmt.Sprintf("🔧 Tool call: %s", name)
+										if input, ok := data["input"].(string); ok && len(input) < 200 {
+											toolInfo += fmt.Sprintf("\nInput: %s", input)
+										}
+										parsed.Parts = append(parsed.Parts, toolInfo)
+									}
+								}
+							case "tool_result":
+								// Handle tool results - show the result
+								if data, ok := p["data"].(map[string]interface{}); ok {
+									if content, ok := data["content"].(string); ok && strings.TrimSpace(content) != "" {
+										result := fmt.Sprintf("📋 Tool result:\n%s", content)
+										parsed.Parts = append(parsed.Parts, result)
+									}
+								}
+							case "finish":
+								// Skip finish messages as they don't contain user content
+								continue
 							}
-						} else if data, ok := p["data"].(map[string]interface{}); ok {
-							if text, ok := data["text"].(string); ok {
-								parsed.Parts = append(parsed.Parts, text)
+						} else {
+							// Fallback for old format
+							if textData, ok := p["text"]; ok {
+								if text, ok := textData.(string); ok && strings.TrimSpace(text) != "" {
+									parsed.Parts = append(parsed.Parts, text)
+								}
+							} else if data, ok := p["data"].(map[string]interface{}); ok {
+								if text, ok := data["text"].(string); ok && strings.TrimSpace(text) != "" {
+									parsed.Parts = append(parsed.Parts, text)
+								}
 							}
 						}
 					}
@@ -117,7 +155,10 @@ func ListMessages(db *sql.DB, sessionID string) ([]ParsedMessage, error) {
 			}
 		}
 
-		messages = append(messages, parsed)
+		// Only add message if it has actual content
+		if len(parsed.Parts) > 0 {
+			messages = append(messages, parsed)
+		}
 	}
 
 	if err := rows.Err(); err != nil {
