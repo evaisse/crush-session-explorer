@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,6 +27,65 @@ func getRoleEmoji(role string) string {
 	}
 }
 
+// formatTimeOnly formats a timestamp to show only time (HH:MM:SS)
+func formatTimeOnly(ts *string) string {
+	if ts == nil || *ts == "" {
+		return "Unknown"
+	}
+
+	// Try parsing as Unix timestamp
+	if timestamp, err := strconv.ParseInt(*ts, 10, 64); err == nil {
+		return time.Unix(timestamp, 0).Format("15:04:05")
+	}
+
+	// Try parsing as ISO format
+	if t, err := time.Parse(time.RFC3339, *ts); err == nil {
+		return t.Local().Format("15:04:05")
+	}
+
+	// Return as-is if parsing fails
+	return *ts
+}
+
+// formatDateOnly formats a timestamp to show only date (YYYY-MM-DD)
+func formatDateOnly(ts *string) string {
+	if ts == nil || *ts == "" {
+		return ""
+	}
+
+	// Try parsing as Unix timestamp
+	if timestamp, err := strconv.ParseInt(*ts, 10, 64); err == nil {
+		return time.Unix(timestamp, 0).Format("2006-01-02")
+	}
+
+	// Try parsing as ISO format
+	if t, err := time.Parse(time.RFC3339, *ts); err == nil {
+		return t.Local().Format("2006-01-02")
+	}
+
+	return ""
+}
+
+// parseMessageTime parses a timestamp to time.Time
+func parseMessageTime(ts *string) *time.Time {
+	if ts == nil || *ts == "" {
+		return nil
+	}
+
+	// Try parsing as Unix timestamp
+	if timestamp, err := strconv.ParseInt(*ts, 10, 64); err == nil {
+		t := time.Unix(timestamp, 0)
+		return &t
+	}
+
+	// Try parsing as ISO format
+	if t, err := time.Parse(time.RFC3339, *ts); err == nil {
+		return &t
+	}
+
+	return nil
+}
+
 // RenderHTML converts a session and messages to HTML format with collapsible panels and timeline
 func RenderHTML(session *db.Session, messages []db.ParsedMessage) string {
 	var result strings.Builder
@@ -45,7 +105,20 @@ func RenderHTML(session *db.Session, messages []db.ParsedMessage) string {
 	// Add conversation container
 	result.WriteString("<div class=\"conversation\">\n")
 
+	var lastDate string
 	for i, msg := range messages {
+		// Check if we need a date separator
+		msgTime := parseMessageTime(msg.CreatedAt)
+		if msgTime != nil {
+			currentDate := msgTime.Format("2006-01-02")
+			if currentDate != lastDate {
+				if i > 0 { // Don't add separator before first message
+					result.WriteString(generateDateSeparator(currentDate))
+				}
+				lastDate = currentDate
+			}
+		}
+		
 		result.WriteString(generateMessage(msg, i))
 	}
 
@@ -80,7 +153,7 @@ func generateHTMLHeader(title string) string {
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 100rem;
             margin: 0 auto;
             padding: 20px;
         }
@@ -242,18 +315,29 @@ func generateHTMLHeader(title string) string {
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             background: #f1f1f1;
             border-left-color: #666;
+            whitespace: pre;
         }
 
-        .anchor-link {
-            color: #667eea;
+        .date-separator {
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            border-bottom: 1px solid #e9ecef;
+            padding: 8px 20px;
+            text-align: center;
+            font-size: 0.85em;
+            font-weight: 600;
+            color: #6c757d;
+            margin: 10px 0;
+        }
+
+        .message-time a {
+            color: inherit;
             text-decoration: none;
-            font-size: 0.75em;
-            opacity: 0.7;
+            opacity: 0.8;
             transition: opacity 0.2s ease;
-            font-weight: bold;
         }
 
-        .anchor-link:hover {
+        .message-time a:hover {
             opacity: 1;
         }
 
@@ -369,15 +453,33 @@ func generateSessionInfo(session *db.Session) string {
 	return result.String()
 }
 
+// generateDateSeparator creates a date separator line
+func generateDateSeparator(date string) string {
+	// Parse date to format it nicely
+	if t, err := time.Parse("2006-01-02", date); err == nil {
+		formattedDate := t.Format("Monday, January 2, 2006")
+		return fmt.Sprintf(`
+    <div class="date-separator">
+        %s
+    </div>
+`, formattedDate)
+	}
+	
+	return fmt.Sprintf(`
+    <div class="date-separator">
+        %s
+    </div>
+`, date)
+}
 
 // generateMessage creates a compact message layout
 func generateMessage(msg db.ParsedMessage, index int) string {
 	var result strings.Builder
 
-	// Message metadata
-	timestamp := "Unknown time"
+	// Message metadata - use time only format
+	timeOnly := "Unknown"
 	if msg.CreatedAt != nil {
-		timestamp = FormatTimestamp(msg.CreatedAt)
+		timeOnly = formatTimeOnly(msg.CreatedAt)
 	}
 
 	var modelInfo []string
@@ -397,9 +499,9 @@ func generateMessage(msg db.ParsedMessage, index int) string {
         <div class="message-sidebar %s">
             <div class="role-badge" title="%s">%s</div>
             <div class="message-info">
-                <div class="message-time">%s</div>
-`, anchorName, html.EscapeString(msg.Role), 
-	html.EscapeString(strings.Title(msg.Role)), getRoleEmoji(msg.Role), html.EscapeString(timestamp)))
+                <div class="message-time"><a href="#%s">%s</a></div>
+`, anchorName, html.EscapeString(msg.Role),
+		html.EscapeString(strings.Title(msg.Role)), getRoleEmoji(msg.Role), anchorName, html.EscapeString(timeOnly)))
 
 	// Add model info if available
 	if len(modelInfo) > 0 {
@@ -408,13 +510,12 @@ func generateMessage(msg db.ParsedMessage, index int) string {
 `, html.EscapeString(strings.Join(modelInfo, "/"))))
 	}
 
-	// Add anchor link
-	result.WriteString(fmt.Sprintf(`
+	// Close message info and sidebar
+	result.WriteString(`
             </div>
-            <a href="#%s" class="anchor-link">#%d</a>
         </div>
         <div class="message-content">
-`, anchorName, index+1))
+`)
 
 	// Add message parts
 	for _, part := range msg.Parts {
@@ -424,7 +525,7 @@ func generateMessage(msg db.ParsedMessage, index int) string {
 		if isToolMessage {
 			cssClass += " tool"
 		}
-		
+
 		result.WriteString(fmt.Sprintf(`
             <div class="%s">%s</div>
 `, cssClass, html.EscapeString(part)))
