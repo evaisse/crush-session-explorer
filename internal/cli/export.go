@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -21,6 +23,55 @@ func formatTimestamp(ts *string) string {
 		return ""
 	}
 	return markdown.FormatTimestamp(ts)
+}
+
+// openInBrowser opens a file in the default browser
+func openInBrowser(filePath string) error {
+	var cmd *exec.Cmd
+	
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", filePath)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", filePath)
+	case "linux":
+		cmd = exec.Command("xdg-open", filePath)
+	default:
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
+	
+	return cmd.Start()
+}
+
+// promptOpenInBrowser asks user if they want to open the HTML file in browser
+func promptOpenInBrowser(filePath string) {
+	if !strings.HasSuffix(strings.ToLower(filePath), ".html") {
+		return // Only prompt for HTML files
+	}
+	
+	fmt.Printf("\n🌐 Open %s in browser? [y/N]: ", filepath.Base(filePath))
+	reader := bufio.NewReader(os.Stdin)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return
+	}
+	
+	choice := strings.TrimSpace(strings.ToLower(input))
+	if choice == "y" || choice == "yes" {
+		// Convert to absolute path for better browser compatibility
+		absPath, err := filepath.Abs(filePath)
+		if err != nil {
+			fmt.Printf("❌ Failed to get absolute path: %v\n", err)
+			return
+		}
+		
+		if err := openInBrowser(absPath); err != nil {
+			fmt.Printf("❌ Failed to open in browser: %v\n", err)
+			fmt.Printf("💡 You can manually open: file://%s\n", absPath)
+		} else {
+			fmt.Printf("✅ Opening in browser...\n")
+		}
+	}
 }
 
 // ExportCmd creates the export command
@@ -184,6 +235,10 @@ func ExportCmd() *cobra.Command {
 			}
 
 			fmt.Println(outputPath)
+			
+			// Prompt to open in browser if HTML format
+			promptOpenInBrowser(outputPath)
+			
 			return nil
 		},
 	}
