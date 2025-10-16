@@ -26,14 +26,14 @@ func RenderHTML(session *db.Session, messages []db.ParsedMessage) string {
 	// Add session metadata
 	result.WriteString(generateSessionInfo(session))
 
-	// Add timeline navigation
-	result.WriteString(generateTimeline(messages))
+	// Add navigation
+	result.WriteString(generateNavigation(messages))
 
-	// Add messages container
-	result.WriteString("<div class=\"messages-container\">\n")
+	// Add conversation container
+	result.WriteString("<div class=\"conversation\">\n")
 
 	for i, msg := range messages {
-		result.WriteString(generateMessagePanel(msg, i))
+		result.WriteString(generateMessage(msg, i))
 	}
 
 	result.WriteString("</div>\n")
@@ -129,153 +129,150 @@ func generateHTMLHeader(title string) string {
             color: #333;
         }
 
-        .timeline {
+        .navigation {
             background: white;
             border-radius: 10px;
             padding: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .timeline h2 {
+        .navigation h2 {
             color: #667eea;
             margin-bottom: 15px;
             border-bottom: 2px solid #eee;
             padding-bottom: 10px;
         }
 
-        .timeline-nav {
+        .nav-links {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
 
-        .timeline-item {
-            padding: 8px 12px;
+        .nav-link {
+            padding: 6px 12px;
             background: #f8f9fa;
-            border-radius: 20px;
+            border-radius: 15px;
             border: 1px solid #ddd;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9em;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.2s ease;
+            font-size: 0.85em;
         }
 
-        .timeline-item:hover {
+        .nav-link:hover {
             background: #667eea;
             color: white;
             transform: translateY(-1px);
         }
 
-        .timeline-item.user {
+        .nav-link.user {
             background: #e3f2fd;
             border-color: #2196f3;
         }
 
-        .timeline-item.assistant {
+        .nav-link.assistant {
             background: #f3e5f5;
             border-color: #9c27b0;
         }
 
-        .messages-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .message-panel {
+        .conversation {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             overflow: hidden;
-            transition: all 0.3s ease;
         }
 
-        .message-panel:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        .message {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            min-height: 60px;
+            border-bottom: 1px solid #f0f0f0;
         }
 
-        .message-header {
-            padding: 15px 20px;
-            cursor: pointer;
+        .message:last-child {
+            border-bottom: none;
+        }
+
+        .message-sidebar {
+            padding: 15px;
+            border-right: 1px solid #f0f0f0;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background-color 0.3s ease;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .message-header:hover {
-            background-color: #f8f9fa;
+        .message-sidebar.user {
+            background: linear-gradient(135deg, #e3f2fd 0%%, #bbdefb 100%%);
         }
 
-        .message-header.user {
-            background: linear-gradient(135deg, #42a5f5 0%%, #1e88e5 100%%);
-            color: white;
+        .message-sidebar.assistant {
+            background: linear-gradient(135deg, #f3e5f5 0%%, #e1bee7 100%%);
         }
 
-        .message-header.assistant {
-            background: linear-gradient(135deg, #ab47bc 0%%, #8e24aa 100%%);
-            color: white;
-        }
-
-        .message-header.system {
-            background: linear-gradient(135deg, #66bb6a 0%%, #43a047 100%%);
-            color: white;
-        }
-
-        .message-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        .message-sidebar.system {
+            background: linear-gradient(135deg, #e8f5e8 0%%, #c8e6c9 100%%);
         }
 
         .role-badge {
             font-weight: bold;
-            font-size: 1.1em;
-            text-transform: capitalize;
-        }
-
-        .message-meta {
             font-size: 0.9em;
-            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #333;
         }
 
-        .toggle-icon {
-            font-size: 1.2em;
-            transition: transform 0.3s ease;
+        .message-time {
+            font-size: 0.8em;
+            color: #666;
+            line-height: 1.2;
         }
 
-        .toggle-icon.expanded {
-            transform: rotate(180deg);
+        .message-model {
+            font-size: 0.75em;
+            color: #888;
+            font-style: italic;
         }
 
         .message-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .message-content.expanded {
-            max-height: 10000px;
-        }
-
-        .content-inner {
-            padding: 20px;
-            border-top: 1px solid #eee;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .message-part {
-            margin-bottom: 15px;
-            padding: 15px;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.95em;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.9em;
             line-height: 1.5;
         }
 
-        .expand-all-btn {
+        .message-part:only-child {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        .anchor-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.8em;
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
+        }
+
+        .anchor-link:hover {
+            opacity: 1;
+        }
+
+        .back-to-top {
             position: fixed;
             bottom: 30px;
             right: 30px;
@@ -283,15 +280,20 @@ func generateHTMLHeader(title string) string {
             color: white;
             border: none;
             border-radius: 50px;
-            padding: 15px 20px;
+            padding: 15px;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             transition: all 0.3s ease;
             font-weight: bold;
             z-index: 1000;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .expand-all-btn:hover {
+        .back-to-top:hover {
             background: #5a67d8;
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(0,0,0,0.4);
@@ -306,14 +308,20 @@ func generateHTMLHeader(title string) string {
                 font-size: 2em;
             }
             
-            .timeline-nav {
-                justify-content: center;
+            .message {
+                grid-template-columns: 1fr;
             }
             
-            .message-info {
-                flex-direction: column;
-                gap: 5px;
-                align-items: flex-start;
+            .message-sidebar {
+                border-right: none;
+                border-bottom: 1px solid #f0f0f0;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .nav-links {
+                justify-content: center;
             }
         }
     </style>
@@ -382,13 +390,13 @@ func generateSessionInfo(session *db.Session) string {
 	return result.String()
 }
 
-// generateTimeline creates the timeline navigation
-func generateTimeline(messages []db.ParsedMessage) string {
+// generateNavigation creates the navigation links
+func generateNavigation(messages []db.ParsedMessage) string {
 	var result strings.Builder
 
-	result.WriteString("<div class=\"timeline\">\n")
-	result.WriteString("<h2>Timeline</h2>\n")
-	result.WriteString("<div class=\"timeline-nav\">\n")
+	result.WriteString("<div class=\"navigation\">\n")
+	result.WriteString("<h2>Quick Navigation</h2>\n")
+	result.WriteString("<div class=\"nav-links\">\n")
 
 	for i, msg := range messages {
 		timestamp := "Unknown"
@@ -396,20 +404,23 @@ func generateTimeline(messages []db.ParsedMessage) string {
 			timestamp = FormatTimestamp(msg.CreatedAt)
 		}
 
+		// Create anchor name
+		anchorName := fmt.Sprintf("msg-%d", i+1)
+
 		result.WriteString(fmt.Sprintf(`
-        <div class="timeline-item %s" onclick="scrollToMessage(%d)" title="%s">
-            %s: %s
-        </div>
-    `, html.EscapeString(msg.Role), i, html.EscapeString(timestamp), 
-		html.EscapeString(strings.Title(msg.Role)), html.EscapeString(timestamp)))
+        <a href="#%s" class="nav-link %s" title="%s">
+            #%d %s
+        </a>
+    `, anchorName, html.EscapeString(msg.Role), html.EscapeString(timestamp), 
+		i+1, html.EscapeString(strings.Title(msg.Role))))
 	}
 
 	result.WriteString("</div>\n</div>\n")
 	return result.String()
 }
 
-// generateMessagePanel creates a collapsible message panel
-func generateMessagePanel(msg db.ParsedMessage, index int) string {
+// generateMessage creates a compact message layout
+func generateMessage(msg db.ParsedMessage, index int) string {
 	var result strings.Builder
 
 	// Message metadata
@@ -426,38 +437,40 @@ func generateMessagePanel(msg db.ParsedMessage, index int) string {
 		modelInfo = append(modelInfo, *msg.Provider)
 	}
 
-	metaText := timestamp
+	// Create anchor name
+	anchorName := fmt.Sprintf("msg-%d", index+1)
+
+	// Generate message
+	result.WriteString(fmt.Sprintf(`
+    <div class="message" id="%s">
+        <div class="message-sidebar %s">
+            <div class="role-badge">%s</div>
+            <div class="message-time">%s</div>
+`, anchorName, html.EscapeString(msg.Role), 
+	html.EscapeString(strings.Title(msg.Role)), html.EscapeString(timestamp)))
+
+	// Add model info if available
 	if len(modelInfo) > 0 {
-		metaText += " • " + strings.Join(modelInfo, "/")
+		result.WriteString(fmt.Sprintf(`
+            <div class="message-model">%s</div>
+`, html.EscapeString(strings.Join(modelInfo, "/"))))
 	}
 
-	// Generate panel
+	// Add anchor link
 	result.WriteString(fmt.Sprintf(`
-    <div class="message-panel" id="message-%d">
-        <div class="message-header %s" onclick="toggleMessage(%d)">
-            <div class="message-info">
-                <div class="role-badge">%s</div>
-                <div class="message-meta">%s</div>
-            </div>
-            <div class="toggle-icon" id="toggle-%d">▼</div>
+            <a href="#%s" class="anchor-link">#%d</a>
         </div>
-        <div class="message-content" id="content-%d">
-            <div class="content-inner">
-`, index, html.EscapeString(msg.Role), index, 
-	html.EscapeString(strings.Title(msg.Role)), html.EscapeString(metaText), index, index))
+        <div class="message-content">
+`, anchorName, index+1))
 
 	// Add message parts
-	for i, part := range msg.Parts {
+	for _, part := range msg.Parts {
 		result.WriteString(fmt.Sprintf(`
-                <div class="message-part">
-                    <strong>Part %d:</strong><br>
-                    %s
-                </div>
-`, i+1, html.EscapeString(part)))
+            <div class="message-part">%s</div>
+`, html.EscapeString(part)))
 	}
 
 	result.WriteString(`
-            </div>
         </div>
     </div>
 `)
@@ -470,60 +483,36 @@ func generateHTMLFooter() string {
 	return `
     </div>
     
-    <button class="expand-all-btn" onclick="toggleAllMessages()" id="expandAllBtn">
-        Expand All
+    <button class="back-to-top" onclick="scrollToTop()" title="Back to top">
+        ↑
     </button>
 
     <script>
-        let allExpanded = false;
-
-        function toggleMessage(index) {
-            const content = document.getElementById('content-' + index);
-            const toggle = document.getElementById('toggle-' + index);
-            
-            if (content.classList.contains('expanded')) {
-                content.classList.remove('expanded');
-                toggle.classList.remove('expanded');
-            } else {
-                content.classList.add('expanded');
-                toggle.classList.add('expanded');
-            }
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function toggleAllMessages() {
-            const contents = document.querySelectorAll('.message-content');
-            const toggles = document.querySelectorAll('.toggle-icon');
-            const btn = document.getElementById('expandAllBtn');
-            
-            if (allExpanded) {
-                contents.forEach(content => content.classList.remove('expanded'));
-                toggles.forEach(toggle => toggle.classList.remove('expanded'));
-                btn.textContent = 'Expand All';
-                allExpanded = false;
-            } else {
-                contents.forEach(content => content.classList.add('expanded'));
-                toggles.forEach(toggle => toggle.classList.add('expanded'));
-                btn.textContent = 'Collapse All';
-                allExpanded = true;
-            }
-        }
-
-        function scrollToMessage(index) {
-            const element = document.getElementById('message-' + index);
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Highlight the message briefly
-            element.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.5)';
-            setTimeout(() => {
-                element.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            }, 2000);
-        }
-
-        // Auto-expand first message on load
+        // Add smooth scrolling for anchor links
         document.addEventListener('DOMContentLoaded', function() {
-            if (document.getElementById('content-0')) {
-                toggleMessage(0);
-            }
+            // Handle anchor clicks for smooth scrolling
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                        
+                        // Highlight the target message briefly
+                        target.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.5)';
+                        setTimeout(() => {
+                            target.style.boxShadow = '';
+                        }, 2000);
+                    }
+                });
+            });
         });
     </script>
 </body>
