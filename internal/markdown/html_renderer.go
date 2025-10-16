@@ -10,6 +10,22 @@ import (
 	"crush-session-explorer/internal/db"
 )
 
+// getRoleEmoji returns the appropriate emoji for a role
+func getRoleEmoji(role string) string {
+	switch strings.ToLower(role) {
+	case "user":
+		return "👤"
+	case "assistant":
+		return "🤖"
+	case "tool":
+		return "🔧"
+	case "system":
+		return "⚙️"
+	default:
+		return "💬"
+	}
+}
+
 // RenderHTML converts a session and messages to HTML format with collapsible panels and timeline
 func RenderHTML(session *db.Session, messages []db.ParsedMessage) string {
 	var result strings.Builder
@@ -168,11 +184,12 @@ func generateHTMLHeader(title string) string {
 
         .role-badge {
             font-weight: bold;
-            font-size: 0.85em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 1.2em;
             color: #333;
-            min-width: 60px;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .message-time {
@@ -219,6 +236,12 @@ func generateHTMLHeader(title string) string {
             background: transparent;
             border: none;
             padding: 0;
+        }
+
+        .message-part.tool {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #f1f1f1;
+            border-left-color: #666;
         }
 
         .anchor-link {
@@ -372,11 +395,11 @@ func generateMessage(msg db.ParsedMessage, index int) string {
 	result.WriteString(fmt.Sprintf(`
     <div class="message" id="%s">
         <div class="message-sidebar %s">
-            <div class="role-badge">%s</div>
+            <div class="role-badge" title="%s">%s</div>
             <div class="message-info">
                 <div class="message-time">%s</div>
 `, anchorName, html.EscapeString(msg.Role), 
-	html.EscapeString(strings.Title(msg.Role)), html.EscapeString(timestamp)))
+	html.EscapeString(strings.Title(msg.Role)), getRoleEmoji(msg.Role), html.EscapeString(timestamp)))
 
 	// Add model info if available
 	if len(modelInfo) > 0 {
@@ -395,9 +418,16 @@ func generateMessage(msg db.ParsedMessage, index int) string {
 
 	// Add message parts
 	for _, part := range msg.Parts {
+		// Check if this is a tool message (starts with emoji indicators)
+		isToolMessage := strings.HasPrefix(part, "🔧") || strings.HasPrefix(part, "📋")
+		cssClass := "message-part"
+		if isToolMessage {
+			cssClass += " tool"
+		}
+		
 		result.WriteString(fmt.Sprintf(`
-            <div class="message-part">%s</div>
-`, html.EscapeString(part)))
+            <div class="%s">%s</div>
+`, cssClass, html.EscapeString(part)))
 	}
 
 	result.WriteString(`
