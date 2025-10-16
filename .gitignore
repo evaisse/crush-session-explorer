@@ -18,6 +18,10 @@ build/
 dist/
 *.spec
 
+# Go binaries
+bin/
+main
+
 # SQLite
 .crush/
 *.db
