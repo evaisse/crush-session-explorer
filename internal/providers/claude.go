@@ -37,6 +37,11 @@ func (p *ClaudeProvider) Name() string {
 	return "claude-code"
 }
 
+// GetDBPath returns the database path
+func (p *ClaudeProvider) GetDBPath() string {
+	return p.dbPath
+}
+
 // getDefaultDBPath returns the default Claude database path based on OS
 func (p *ClaudeProvider) getDefaultDBPath() string {
 	home, err := os.UserHomeDir()

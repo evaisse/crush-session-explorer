@@ -32,6 +32,11 @@ func (p *CrushProvider) Name() string {
 	return "crush"
 }
 
+// GetDBPath returns the database path
+func (p *CrushProvider) GetDBPath() string {
+	return p.dbPath
+}
+
 // Discover checks if Crush database exists
 func (p *CrushProvider) Discover() (bool, error) {
 	// Check if database file exists

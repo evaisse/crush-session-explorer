@@ -134,12 +134,9 @@ func ExportCmd() *cobra.Command {
 				seenPaths := make(map[string]bool)
 				for _, p := range availableProviders {
 					if cp, ok := p.(*providers.CrushProvider); ok {
-						// Mark default crush path as seen
-						seenPaths["crush:.crush/crush.db"] = true
-						_ = cp // avoid unused variable warning
+						seenPaths["crush:"+cp.GetDBPath()] = true
 					} else if cp, ok := p.(*providers.ClaudeProvider); ok {
-						// Mark default claude path as seen (OS-dependent)
-						seenPaths["claude:"+cp.Name()] = true
+						seenPaths["claude:"+cp.GetDBPath()] = true
 					}
 				}
 
