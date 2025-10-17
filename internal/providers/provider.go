@@ -9,6 +9,9 @@ type Provider interface {
 	// Name returns the provider name (e.g., "crush", "claude-code", "cursor")
 	Name() string
 
+	// GetDBPath returns the database path for this provider
+	GetDBPath() string
+
 	// Discover checks if this provider's data exists on the system
 	Discover() (bool, error)
 
