@@ -22,6 +22,10 @@ func main() {
 	// Add export command
 	rootCmd.AddCommand(cli.ExportCmd())
 
+	// Add AICS interchange format commands
+	rootCmd.AddCommand(cli.ExportAICSCmd())
+	rootCmd.AddCommand(cli.ImportAICSCmd())
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

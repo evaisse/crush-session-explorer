@@ -10,6 +10,8 @@ This tool allows you to extract and export individual chat sessions from Crush's
 
 - 📊 **SQLite Integration**: Direct access to Crush database using Go's SQLite driver
 - 📝 **Markdown Export**: Clean conversion to Markdown with YAML frontmatter
+- 🔄 **AICS Format Support**: Export/import sessions using the standardized AI Coding Session interchange format
+- 🔀 **Cross-Tool Migration**: Migrate sessions between different AI coding tools (Cursor, Claude Code, etc.)
 - 🔍 **Interactive Session Selection**: Browse and select sessions interactively
 - 📅 **Timestamp Formatting**: Automatic timestamp conversion to readable formats
 - 🏷️ **Metadata Preservation**: Session metadata and message details preserved
@@ -54,6 +56,24 @@ make build-all  # Creates binaries for all platforms in bin/
 # or if installed globally: crush-md export --db ./.crush/crush.db --session <session-id> --out output.md
 ```
 
+### Export to AICS Interchange Format
+
+Export sessions to the standardized AICS (AI Coding Session) format for migration to other tools:
+
+```bash
+./bin/crush-md export-aics --db ./.crush/crush.db --out sessions.aics.json
+```
+
+This creates a vendor-neutral JSON file that can be imported into other AI coding tools.
+
+### Import from AICS Format
+
+Import sessions from other AI coding tools that support AICS format:
+
+```bash
+./bin/crush-md import-aics --input sessions.aics.json --format markdown --out ./imported/
+```
+
 ### Interactive Session Selection
 
 ```bash
@@ -71,11 +91,31 @@ Select session number:
 
 ### Command Line Options
 
+#### export command
+
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--db` | Path to the SQLite database | `.crush/crush.db` |
 | `--session` | Specific session ID to export | Interactive selection |
 | `--out` | Output Markdown file path | Auto-generated based on session |
+| `--format` | Output format (markdown, html, md) | Interactive selection |
+
+#### export-aics command
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--db` | Path to the SQLite database | `.crush/crush.db` |
+| `--out` | Output AICS file path | `sessions.aics.json` |
+| `--provider` | Name of the AI provider/tool | `Crush` |
+| `--limit` | Maximum number of sessions to export | `50` |
+
+#### import-aics command
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--input` | Input AICS file path | Required |
+| `--out` | Output directory for exported sessions | `imported-sessions` |
+| `--format` | Output format (markdown, html, md) | `markdown` |
 
 ### Output Format
 
@@ -111,6 +151,58 @@ Can you help me understand this code structure?
 I'd be happy to help explain the code structure...
 </div>
 ```
+
+## AICS Format (AI Coding Session Interchange Format)
+
+The tool now supports the **AICS (AI Coding Session)** format, a standardized JSON-based interchange format for AI coding sessions. This format enables:
+
+### Benefits
+
+- **Tool Independence**: Switch between AI coding assistants (Cursor, Claude Code, GitHub Copilot, etc.) without losing history
+- **Data Portability**: Export and import sessions in a vendor-neutral format
+- **Archival**: Long-term preservation of AI conversations in a standardized format
+- **Interoperability**: Share sessions with team members using different tools
+
+### Usage Examples
+
+#### Migrate from Crush to Another Tool
+
+```bash
+# Step 1: Export from Crush to AICS format
+crush-md export-aics --db .crush/crush.db --out my-sessions.aics.json
+
+# Step 2: Import the AICS file into your new tool (if supported)
+# or convert to markdown for reference
+crush-md import-aics --input my-sessions.aics.json --format markdown
+```
+
+#### Archive All Sessions
+
+```bash
+# Export all sessions to AICS format for long-term storage
+crush-md export-aics --db .crush/crush.db --out archive-2024.aics.json --limit 1000
+```
+
+#### Share Sessions with Team
+
+```bash
+# Export specific sessions to AICS format
+crush-md export-aics --db .crush/crush.db --out team-sessions.aics.json --limit 10
+
+# Team member imports and converts to their preferred format
+crush-md import-aics --input team-sessions.aics.json --format html
+```
+
+### Format Specification
+
+For detailed information about the AICS format specification, see [AICS_FORMAT.md](AICS_FORMAT.md).
+
+The AICS format is inspired by the HAR (HTTP Archive) format and provides:
+- Standardized JSON structure
+- ISO 8601 timestamps
+- Support for multiple message types (text, tool calls, tool results)
+- Flexible metadata system
+- Version control for format evolution
 
 ## Project Structure
 

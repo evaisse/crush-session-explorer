@@ -118,7 +118,7 @@ func RenderHTML(session *db.Session, messages []db.ParsedMessage) string {
 				lastDate = currentDate
 			}
 		}
-		
+
 		result.WriteString(generateMessage(msg, i))
 	}
 
@@ -464,7 +464,7 @@ func generateDateSeparator(date string) string {
     </div>
 `, formattedDate)
 	}
-	
+
 	return fmt.Sprintf(`
     <div class="date-separator">
         %s

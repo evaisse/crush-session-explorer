@@ -28,7 +28,7 @@ func formatTimestamp(ts *string) string {
 // openInBrowser opens a file in the default browser
 func openInBrowser(filePath string) error {
 	var cmd *exec.Cmd
-	
+
 	switch runtime.GOOS {
 	case "darwin":
 		cmd = exec.Command("open", filePath)
@@ -39,7 +39,7 @@ func openInBrowser(filePath string) error {
 	default:
 		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
-	
+
 	return cmd.Start()
 }
 
@@ -48,14 +48,14 @@ func promptOpenInBrowser(filePath string) {
 	if !strings.HasSuffix(strings.ToLower(filePath), ".html") {
 		return // Only prompt for HTML files
 	}
-	
+
 	fmt.Printf("\n🌐 Open %s in browser? [y/N]: ", filepath.Base(filePath))
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
 		return
 	}
-	
+
 	choice := strings.TrimSpace(strings.ToLower(input))
 	if choice == "y" || choice == "yes" {
 		// Convert to absolute path for better browser compatibility
@@ -64,7 +64,7 @@ func promptOpenInBrowser(filePath string) {
 			fmt.Printf("❌ Failed to get absolute path: %v\n", err)
 			return
 		}
-		
+
 		if err := openInBrowser(absPath); err != nil {
 			fmt.Printf("❌ Failed to open in browser: %v\n", err)
 			fmt.Printf("💡 You can manually open: file://%s\n", absPath)
@@ -117,7 +117,7 @@ func ExportCmd() *cobra.Command {
 					if s.MessageCount != nil {
 						messageCount = *s.MessageCount
 					}
-					fmt.Printf("%2d. %s — %s — %s — %d msg\n", 
+					fmt.Printf("%2d. %s — %s — %s — %d msg\n",
 						i+1, s.ID, formatTimestamp(s.CreatedAt), title, messageCount)
 				}
 
@@ -161,7 +161,7 @@ func ExportCmd() *cobra.Command {
 				fmt.Println("Choose export format:")
 				fmt.Println("1. Markdown (.md)")
 				fmt.Println("2. HTML with interactive panels (.html)")
-				
+
 				fmt.Print("Select format [1-2]: ")
 				reader := bufio.NewReader(os.Stdin)
 				input, err := reader.ReadString('\n')
@@ -235,10 +235,10 @@ func ExportCmd() *cobra.Command {
 			}
 
 			fmt.Println(outputPath)
-			
+
 			// Prompt to open in browser if HTML format
 			promptOpenInBrowser(outputPath)
-			
+
 			return nil
 		},
 	}
