@@ -13,7 +13,7 @@ The **AICS (AI Coding Session)** format is a standardized JSON-based interchange
 - Data portability and vendor independence
 - Analysis and auditing of AI interactions
 
-This format is inspired by the [HAR (HTTP Archive)](https://en.wikipedia.org/wiki/HAR_(file_format)) format, which provides a standard way to export HTTP transaction data.
+This format is inspired by the [HAR (HTTP Archive)](<https://en.wikipedia.org/wiki/HAR_(file_format)>) format, which provides a standard way to export HTTP transaction data.
 
 ### Design Goals
 
@@ -332,7 +332,7 @@ Tools may add custom fields to the `metadata` objects at any level. Custom field
 
 ### References
 
-- [HAR (HTTP Archive) Format](https://en.wikipedia.org/wiki/HAR_(file_format))
+- [HAR (HTTP Archive) Format](<https://en.wikipedia.org/wiki/HAR_(file_format)>)
 - [JSON Schema](https://json-schema.org/)
 - [ISO 8601 Date/Time Format](https://en.wikipedia.org/wiki/ISO_8601)
 

@@ -279,5 +279,5 @@ for _, session := range archive.Log.Sessions {
 ## Resources
 
 - [AICS Format Specification](AICS_FORMAT.md)
-- [HAR Format Specification](https://en.wikipedia.org/wiki/HAR_(file_format)) (inspiration)
+- [HAR Format Specification](<https://en.wikipedia.org/wiki/HAR_(file_format)>) (inspiration)
 - [ISO 8601 Date/Time Format](https://en.wikipedia.org/wiki/ISO_8601)
