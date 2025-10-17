@@ -24,7 +24,54 @@ This tool allows you to extract and export individual chat sessions from Crush's
 
 ## Installation
 
-### Quick Setup
+### One-Line Installer (Recommended)
+
+Install the latest release for your platform with a single command:
+
+```bash
+# Using curl
+curl -sSfL https://raw.githubusercontent.com/evaisse/crush-session-explorer/master/install.sh | bash
+
+# Or using wget
+wget -qO- https://raw.githubusercontent.com/evaisse/crush-session-explorer/master/install.sh | bash
+```
+
+The installer will:
+- Automatically detect your OS and architecture
+- Download the latest release from GitHub
+- Install the binary to `/usr/local/bin`
+- Make it executable and ready to use
+
+To install to a custom directory, set the `INSTALL_DIR` environment variable:
+
+```bash
+INSTALL_DIR="$HOME/.local/bin" curl -sSfL https://raw.githubusercontent.com/evaisse/crush-session-explorer/master/install.sh | bash
+```
+
+### Manual Installation from Release
+
+Download the appropriate binary for your platform from the [latest release](https://github.com/evaisse/crush-session-explorer/releases/latest):
+
+```bash
+# Linux (amd64)
+wget https://github.com/evaisse/crush-session-explorer/releases/latest/download/crush-md-linux-amd64
+chmod +x crush-md-linux-amd64
+sudo mv crush-md-linux-amd64 /usr/local/bin/crush-md
+
+# macOS (arm64/M1+)
+wget https://github.com/evaisse/crush-session-explorer/releases/latest/download/crush-md-darwin-arm64
+chmod +x crush-md-darwin-arm64
+sudo mv crush-md-darwin-arm64 /usr/local/bin/crush-md
+
+# macOS (amd64/Intel)
+wget https://github.com/evaisse/crush-session-explorer/releases/latest/download/crush-md-darwin-amd64
+chmod +x crush-md-darwin-amd64
+sudo mv crush-md-darwin-amd64 /usr/local/bin/crush-md
+```
+
+### Build from Source
+
+#### Quick Setup
 
 ```bash
 git clone <repository-url>
@@ -33,13 +80,13 @@ go mod download
 make build
 ```
 
-### Install Globally
+#### Install Globally
 
 ```bash
 go install ./cmd/crush-md
 ```
 
-### Cross-Platform Builds
+#### Cross-Platform Builds
 
 ```bash
 make build-all  # Creates binaries for all platforms in bin/
