@@ -73,9 +73,9 @@ get_latest_version() {
         # Fallback: try to scrape from releases page
         warn "GitHub API unavailable, trying alternative method..."
         if command -v curl &> /dev/null; then
-            version=$(curl -sSL "https://github.com/${REPO}/releases/latest" 2>/dev/null | grep -oP 'tag/\K[^"]+' | head -1 || echo "")
+            version=$(curl -sSL "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed -n 's|.*tag/\([^"]*\).*|\1|p' | head -1 || echo "")
         elif command -v wget &> /dev/null; then
-            version=$(wget -qO- "https://github.com/${REPO}/releases/latest" 2>/dev/null | grep -oP 'tag/\K[^"]+' | head -1 || echo "")
+            version=$(wget -qO- "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed -n 's|.*tag/\([^"]*\).*|\1|p' | head -1 || echo "")
         fi
     fi
     
@@ -94,11 +94,11 @@ download_file() {
     info "Downloading from: $url"
     
     if command -v curl &> /dev/null; then
-        if ! curl -sSfL "$url" -o "$output" 2>&1; then
+        if ! curl -sSfL "$url" -o "$output"; then
             return 1
         fi
     elif command -v wget &> /dev/null; then
-        if ! wget -qO "$output" "$url" 2>&1; then
+        if ! wget -qO "$output" "$url"; then
             return 1
         fi
     else
