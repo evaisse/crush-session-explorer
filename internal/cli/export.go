@@ -78,6 +78,7 @@ func promptOpenInBrowser(filePath string) {
 // ExportCmd creates the export command
 func ExportCmd() *cobra.Command {
 	var dbPath string
+	var claudeDBPath string
 	var sessionID string
 	var outputPath string
 	var format string
@@ -106,6 +107,12 @@ func ExportCmd() *cobra.Command {
 				if providerName == "crush" && dbPath != "" {
 					crushProvider := provider.(*providers.CrushProvider)
 					crushProvider.SetDBPath(dbPath)
+				}
+
+				// For Claude provider, allow custom db path
+				if (providerName == "claude-code" || providerName == "claude") && claudeDBPath != "" {
+					claudeProvider := provider.(*providers.ClaudeProvider)
+					claudeProvider.SetDBPath(claudeDBPath)
 				}
 
 				found, err := provider.Discover()
@@ -138,6 +145,14 @@ func ExportCmd() *cobra.Command {
 						if !hasCustomCrush {
 							availableProviders = append(availableProviders, crushProvider)
 						}
+					}
+				}
+
+				// If claudeDBPath is specified, also try Claude provider with that path
+				if claudeDBPath != "" {
+					claudeProvider := providers.NewClaudeProviderWithPath(claudeDBPath)
+					if found, _ := claudeProvider.Discover(); found {
+						availableProviders = append(availableProviders, claudeProvider)
 					}
 				}
 
@@ -344,6 +359,7 @@ func ExportCmd() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&dbPath, "db", ".crush/crush.db", "Path to sqlite database (for Crush provider)")
+	cmd.Flags().StringVar(&claudeDBPath, "claude-db", "", "Path to Claude database (for Claude provider)")
 	cmd.Flags().StringVar(&sessionID, "session", "", "Session ID to export")
 	cmd.Flags().StringVar(&outputPath, "out", "", "Output file path")
 	cmd.Flags().StringVar(&format, "format", "markdown", "Output format: markdown, html, md (interactive selection if not specified)")

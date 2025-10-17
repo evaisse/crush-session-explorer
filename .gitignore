@@ -34,4 +34,5 @@ main
 .DS_Store
 
 
-out.md
+out.md.test_crush/
+.test_claude/
