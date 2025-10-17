@@ -24,7 +24,7 @@ jobs:
         run: |
           # Get the commit hash of the tag
           TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref }})
-          
+
           # Check if this commit is on master branch
           if git merge-base --is-ancestor $TAG_COMMIT origin/master && \
              git merge-base --is-ancestor origin/master $TAG_COMMIT; then
@@ -136,27 +136,27 @@ jobs:
           name: Release ${{ steps.version.outputs.VERSION }}
           body: |
             ## Release ${{ steps.version.outputs.VERSION }}
-            
+
             ### Installation
-            
+
             **NPM (Recommended):**
             ```bash
             npm install -g crush-session-explorer
             ```
-            
+
             **Direct Download:**
             - **Linux (amd64)**: `crush-md-linux-amd64`
             - **Linux (arm64)**: `crush-md-linux-arm64`
             - **Windows (amd64)**: `crush-md-windows-amd64.exe`
             - **Windows (arm64)**: `crush-md-windows-arm64.exe`
-            - **macOS (amd64)**: `crush-md-darwin-amd64`  
+            - **macOS (amd64)**: `crush-md-darwin-amd64`
             - **macOS (arm64)**: `crush-md-darwin-arm64`
-            
+
             ### Manual Installation (Direct Download)
             1. Download the appropriate binary for your platform
             2. Make it executable: `chmod +x crush-md-*` (Linux/macOS)
             3. Move to your PATH: `mv crush-md-* /usr/local/bin/crush-md`
-            
+
             ### Verification
             Use the provided `checksums.txt` to verify the integrity of downloaded files:
             ```bash
