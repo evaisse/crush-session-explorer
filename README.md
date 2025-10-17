@@ -24,7 +24,17 @@ This tool allows you to extract and export individual chat sessions from Crush's
 
 ## Installation
 
-### Quick Setup
+### NPM (Recommended)
+
+The easiest way to install `crush-md` is via NPM:
+
+```bash
+npm install -g crush-session-explorer
+```
+
+This will automatically download and install the correct binary for your platform.
+
+### Quick Setup (Manual Build)
 
 ```bash
 git clone <repository-url>
