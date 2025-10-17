@@ -13,13 +13,21 @@ __pycache__/
 # Virtual env
 .venv/
 
+# Node.js
+node_modules/
+package-lock.json
+npm-debug.log
+yarn.lock
+*.tgz
+
 # Build artifacts
 build/
 dist/
 *.spec
 
 # Go binaries
-bin/
+bin/*
+!bin/crush-md.js
 main
 
 # SQLite

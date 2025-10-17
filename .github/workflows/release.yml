@@ -137,7 +137,14 @@ jobs:
           body: |
             ## Release ${{ steps.version.outputs.VERSION }}
             
-            ### Downloads
+            ### Installation
+            
+            **NPM (Recommended):**
+            ```bash
+            npm install -g crush-session-explorer
+            ```
+            
+            **Direct Download:**
             - **Linux (amd64)**: `crush-md-linux-amd64`
             - **Linux (arm64)**: `crush-md-linux-arm64`
             - **Windows (amd64)**: `crush-md-windows-amd64.exe`
@@ -145,7 +152,7 @@ jobs:
             - **macOS (amd64)**: `crush-md-darwin-amd64`  
             - **macOS (arm64)**: `crush-md-darwin-arm64`
             
-            ### Installation
+            ### Manual Installation (Direct Download)
             1. Download the appropriate binary for your platform
             2. Make it executable: `chmod +x crush-md-*` (Linux/macOS)
             3. Move to your PATH: `mv crush-md-* /usr/local/bin/crush-md`
@@ -161,3 +168,33 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  npm-publish:
+    needs: [check-branch, release]
+    if: needs.check-branch.outputs.is-master == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version $VERSION to npm"
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ steps.version.outputs.VERSION }} --no-git-tag-version --allow-same-version
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
