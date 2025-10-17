@@ -33,5 +33,8 @@ main
 .idea/
 .DS_Store
 
+# Test artifacts
+*.aics.json
+imported-sessions/
 
 out.md
