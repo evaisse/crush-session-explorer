@@ -48,6 +48,12 @@ To install to a custom directory, set the `INSTALL_DIR` environment variable:
 INSTALL_DIR="$HOME/.local/bin" curl -sSfL https://raw.githubusercontent.com/evaisse/crush-session-explorer/master/install.sh | bash
 ```
 
+To install a specific version, set the `VERSION` environment variable:
+
+```bash
+VERSION=v0.1.0 curl -sSfL https://raw.githubusercontent.com/evaisse/crush-session-explorer/master/install.sh | bash
+```
+
 ### Manual Installation from Release
 
 Download the appropriate binary for your platform from the [latest release](https://github.com/evaisse/crush-session-explorer/releases/latest):

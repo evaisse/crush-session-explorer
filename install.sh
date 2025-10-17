@@ -18,6 +18,9 @@ BINARY_NAME="crush-md"
 # Default installation directory
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 
+# Allow version override
+VERSION="${VERSION:-}"
+
 # Utility functions
 info() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -59,15 +62,25 @@ detect_arch() {
 get_latest_version() {
     local version
     if command -v curl &> /dev/null; then
-        version=$(curl -sSfL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        version=$(curl -sSL "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
     elif command -v wget &> /dev/null; then
-        version=$(wget -qO- "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        version=$(wget -qO- "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' || echo "")
     else
         error "Neither curl nor wget is available. Please install one of them."
     fi
     
     if [ -z "$version" ]; then
-        error "Failed to get latest version from GitHub API"
+        # Fallback: try to scrape from releases page
+        warn "GitHub API unavailable, trying alternative method..."
+        if command -v curl &> /dev/null; then
+            version=$(curl -sSL "https://github.com/${REPO}/releases/latest" 2>/dev/null | grep -oP 'tag/\K[^"]+' | head -1 || echo "")
+        elif command -v wget &> /dev/null; then
+            version=$(wget -qO- "https://github.com/${REPO}/releases/latest" 2>/dev/null | grep -oP 'tag/\K[^"]+' | head -1 || echo "")
+        fi
+    fi
+    
+    if [ -z "$version" ]; then
+        error "Failed to get latest version. Please set VERSION environment variable (e.g., VERSION=v0.1.0)"
     fi
     
     echo "$version"
@@ -81,12 +94,18 @@ download_file() {
     info "Downloading from: $url"
     
     if command -v curl &> /dev/null; then
-        curl -sSfL "$url" -o "$output"
+        if ! curl -sSfL "$url" -o "$output" 2>&1; then
+            return 1
+        fi
     elif command -v wget &> /dev/null; then
-        wget -qO "$output" "$url"
+        if ! wget -qO "$output" "$url" 2>&1; then
+            return 1
+        fi
     else
         error "Neither curl nor wget is available. Please install one of them."
     fi
+    
+    return 0
 }
 
 # Main installation function
@@ -103,8 +122,13 @@ main() {
     
     # Get latest version
     local version
-    version=$(get_latest_version)
-    info "Latest version: $version"
+    if [ -n "$VERSION" ]; then
+        version="$VERSION"
+        info "Using specified version: $version"
+    else
+        version=$(get_latest_version)
+        info "Latest version: $version"
+    fi
     
     # Build binary name based on OS and arch
     local binary_suffix="${os}-${arch}"
@@ -126,7 +150,12 @@ main() {
     # Download binary
     info "Downloading ${binary_file}..."
     if ! download_file "$download_url" "$tmp_file"; then
-        error "Failed to download binary from $download_url"
+        error "Failed to download binary from $download_url. Please check the version exists."
+    fi
+    
+    # Verify download
+    if [ ! -f "$tmp_file" ] || [ ! -s "$tmp_file" ]; then
+        error "Downloaded file is empty or doesn't exist"
     fi
     
     # Make binary executable
