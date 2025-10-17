@@ -73,9 +73,9 @@ get_latest_version() {
         # Fallback: try to scrape from releases page
         warn "GitHub API unavailable, trying alternative method..."
         if command -v curl &> /dev/null; then
-            version=$(curl -sSL "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed -n 's|.*tag/\([^"]*\).*|\1|p' | head -1 || echo "")
+            version=$(curl -sSL "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed -n 's|.*href="[^"]*tag/\([^"]*\)".*|\1|p' | head -1 || echo "")
         elif command -v wget &> /dev/null; then
-            version=$(wget -qO- "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed -n 's|.*tag/\([^"]*\).*|\1|p' | head -1 || echo "")
+            version=$(wget -qO- "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed -n 's|.*href="[^"]*tag/\([^"]*\)".*|\1|p' | head -1 || echo "")
         fi
     fi
     
