@@ -130,29 +130,40 @@ func ExportCmd() *cobra.Command {
 				// Auto-discover all available providers
 				availableProviders := providers.DiscoverAllProviders()
 
-				// If dbPath is specified, also try Crush provider with that path
-				if dbPath != "" && dbPath != ".crush/crush.db" {
-					crushProvider := providers.NewCrushProviderWithPath(dbPath)
-					if found, _ := crushProvider.Discover(); found {
-						// Check if not already in list
-						hasCustomCrush := false
-						for _, p := range availableProviders {
-							if cp, ok := p.(*providers.CrushProvider); ok && cp == crushProvider {
-								hasCustomCrush = true
-								break
-							}
-						}
-						if !hasCustomCrush {
+				// Track provider paths to avoid duplicates
+				seenPaths := make(map[string]bool)
+				for _, p := range availableProviders {
+					if cp, ok := p.(*providers.CrushProvider); ok {
+						// Mark default crush path as seen
+						seenPaths["crush:.crush/crush.db"] = true
+						_ = cp // avoid unused variable warning
+					} else if cp, ok := p.(*providers.ClaudeProvider); ok {
+						// Mark default claude path as seen (OS-dependent)
+						seenPaths["claude:"+cp.Name()] = true
+					}
+				}
+
+				// If dbPath is specified, add Crush provider with that path if not already present
+				if dbPath != "" {
+					pathKey := "crush:" + dbPath
+					if !seenPaths[pathKey] {
+						crushProvider := providers.NewCrushProviderWithPath(dbPath)
+						if found, _ := crushProvider.Discover(); found {
 							availableProviders = append(availableProviders, crushProvider)
+							seenPaths[pathKey] = true
 						}
 					}
 				}
 
-				// If claudeDBPath is specified, also try Claude provider with that path
+				// If claudeDBPath is specified, add Claude provider with that path if not already present
 				if claudeDBPath != "" {
-					claudeProvider := providers.NewClaudeProviderWithPath(claudeDBPath)
-					if found, _ := claudeProvider.Discover(); found {
-						availableProviders = append(availableProviders, claudeProvider)
+					pathKey := "claude:" + claudeDBPath
+					if !seenPaths[pathKey] {
+						claudeProvider := providers.NewClaudeProviderWithPath(claudeDBPath)
+						if found, _ := claudeProvider.Discover(); found {
+							availableProviders = append(availableProviders, claudeProvider)
+							seenPaths[pathKey] = true
+						}
 					}
 				}
 
