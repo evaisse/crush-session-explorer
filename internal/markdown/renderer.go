@@ -61,19 +61,19 @@ func formatTimestampISO(ts *string) string {
 // slugify converts text to a URL-friendly slug
 func slugify(text string) string {
 	text = strings.ToLower(strings.TrimSpace(text))
-	
+
 	// Remove non-alphanumeric characters except hyphens, spaces, and underscores
 	reg := regexp.MustCompile(`[^a-z0-9\-\s_]+`)
 	text = reg.ReplaceAllString(text, "")
-	
+
 	// Replace spaces and underscores with hyphens
 	reg = regexp.MustCompile(`[\s_]+`)
 	text = reg.ReplaceAllString(text, "-")
-	
+
 	if text == "" {
 		return "untitled"
 	}
-	
+
 	return text
 }
 

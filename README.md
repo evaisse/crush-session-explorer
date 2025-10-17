@@ -1,16 +1,21 @@
 # Crush Session Explorer
 
-A fast, lightweight CLI tool written in Go for exporting Crush chat sessions from SQLite databases to Markdown format with YAML frontmatter.
+A fast, lightweight CLI tool written in Go for exporting chat sessions from multiple AI code tools (Crush, Claude Code, etc.) to Markdown or HTML format with YAML frontmatter.
 
 ## Overview
 
-This tool allows you to extract and export individual chat sessions from Crush's SQLite database, converting them into well-formatted Markdown files with structured metadata. Perfect for archiving, documentation, or further processing of conversation data.
+This tool allows you to extract and export individual chat sessions from various AI coding assistants' databases, converting them into well-formatted Markdown or HTML files with structured metadata. Perfect for archiving, documentation, or further processing of conversation data.
 
 ## Features
 
-- 📊 **SQLite Integration**: Direct access to Crush database using Go's SQLite driver
+- 🔌 **Multi-Provider Support**: Auto-discover and export sessions from multiple AI code tools
+  - Crush (`.crush/crush.db`)
+  - Claude Code/Desktop
+  - Extensible architecture for adding more providers
+- 📊 **SQLite Integration**: Direct access to databases using Go's SQLite driver
 - 📝 **Markdown Export**: Clean conversion to Markdown with YAML frontmatter
-- 🔍 **Interactive Session Selection**: Browse and select sessions interactively
+- 🌐 **HTML Export**: Interactive HTML with collapsible panels and syntax highlighting
+- 🔍 **Interactive Session Selection**: Browse and select sessions from all available providers
 - 📅 **Timestamp Formatting**: Automatic timestamp conversion to readable formats
 - 🏷️ **Metadata Preservation**: Session metadata and message details preserved
 - 🎯 **Type Safety**: Full compile-time type checking with Go
@@ -100,35 +105,76 @@ make build-all  # Creates binaries for all platforms in bin/
 
 ## Usage
 
+### Auto-Discovery Mode (Recommended)
+
+The tool automatically discovers all available AI code tool sessions on your system:
+
+```bash
+./bin/crush-md export
+```
+
+This will scan for:
+- Crush sessions in `.crush/crush.db`
+- Claude Code sessions in the default location (OS-dependent)
+- Any custom database paths you specify
+
+Example output:
+```
+Available sessions:
+ 1. abc123 — 2024-01-15 14:30 — Project Discussion — 12 msg [crush]
+ 2. def456 — 2024-01-15 13:45 — Code Review — 8 msg [claude-code]
+ 3. ghi789 — 2024-01-15 12:20 — Planning Meeting — 15 msg [crush]
+Select session number: 
+```
+
 ### Export a Specific Session
 
 ```bash
-./bin/crush-md export --db ./.crush/crush.db --session <session-id> --out output.md
-# or if installed globally: crush-md export --db ./.crush/crush.db --session <session-id> --out output.md
+./bin/crush-md export --session <session-id> --out output.md
 ```
 
-### Interactive Session Selection
+### Specify Provider Explicitly
 
 ```bash
-./bin/crush-md export --db ./.crush/crush.db
+# Export from Crush only
+./bin/crush-md export --provider crush --db ./.crush/crush.db
+
+# Export from Claude Code only
+./bin/crush-md export --provider claude-code --claude-db ~/Library/Application\ Support/Claude/state.db
 ```
 
-This will display a list of recent sessions for you to choose from:
+### Custom Database Paths
 
-```
- 1. abc123 — 2024-01-15 14:30 — Project Discussion — 12 msg
- 2. def456 — 2024-01-15 13:45 — Code Review — 8 msg
- 3. ghi789 — 2024-01-15 12:20 — Planning Meeting — 15 msg
-Select session number: 
+```bash
+# Custom Crush database
+./bin/crush-md export --db /path/to/custom/crush.db
+
+# Custom Claude database
+./bin/crush-md export --claude-db /path/to/custom/claude.db
+
+# Both providers with custom paths
+./bin/crush-md export --db /path/to/crush.db --claude-db /path/to/claude.db
 ```
 
 ### Command Line Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--db` | Path to the SQLite database | `.crush/crush.db` |
+| `--db` | Path to Crush SQLite database | `.crush/crush.db` |
+| `--claude-db` | Path to Claude SQLite database | Auto-detected by OS |
+| `--provider` | Specific provider to use | Auto-detect all |
 | `--session` | Specific session ID to export | Interactive selection |
-| `--out` | Output Markdown file path | Auto-generated based on session |
+| `--out` | Output file path | Auto-generated |
+| `--format` | Output format (markdown, html) | Interactive selection |
+
+### Supported Providers
+
+| Provider | Description | Default Database Path |
+|----------|-------------|----------------------|
+| `crush` | Crush AI code tool | `.crush/crush.db` |
+| `claude-code` | Claude Desktop/Code | macOS: `~/Library/Application Support/Claude/state.db`<br>Linux: `~/.config/Claude/state.db`<br>Windows: `%APPDATA%/Claude/state.db` |
+
+More providers can be easily added by implementing the `Provider` interface.
 
 ### Output Format
 
@@ -179,9 +225,14 @@ crush-session-explorer/
 │   │   ├── connection.go         # Database connection
 │   │   ├── models.go             # Data models
 │   │   └── queries.go            # Database queries
-│   └── markdown/
-│       ├── renderer.go           # Markdown rendering
-│       └── utils.go              # Utility functions
+│   ├── markdown/
+│   │   ├── renderer.go           # Markdown rendering
+│   │   ├── html_renderer.go     # HTML rendering
+│   │   └── utils.go              # Utility functions
+│   └── providers/                # AI code tool providers
+│       ├── provider.go           # Provider interface
+│       ├── crush.go              # Crush provider implementation
+│       └── claude.go             # Claude Code provider implementation
 ├── bin/                          # Build output (created by make build)
 ├── go.mod                        # Go module definition
 ├── go.sum                        # Go dependencies
@@ -231,6 +282,30 @@ The codebase follows these principles:
 - **Testable**: Modular design with comprehensive test coverage
 - **Performance**: Efficient memory usage and fast execution
 
+### Adding New Providers
+
+The tool is designed to be easily extensible. To add support for a new AI code tool:
+
+1. Create a new file in `internal/providers/` (e.g., `cursor.go`)
+2. Implement the `Provider` interface:
+   ```go
+   type Provider interface {
+       Name() string
+       Discover() (bool, error)
+       ListSessions(limit int) ([]db.Session, error)
+       FetchSession(sessionID string) (*db.Session, error)
+       ListMessages(sessionID string) ([]db.ParsedMessage, error)
+   }
+   ```
+3. Add your provider to the `DiscoverAllProviders()` function in `provider.go`
+4. Update the `GetProvider()` function to include your provider name
+
+Example providers:
+- **Crush**: SQLite-based sessions in `.crush/crush.db`
+- **Claude Code**: SQLite-based conversations in Claude Desktop's database
+- **Cursor**: (Future) Support for Cursor editor sessions
+- **Copilot**: (Future) Support for GitHub Copilot sessions
+
 ## Security Notes
 
 - All database queries use parameterized statements to prevent SQL injection
@@ -242,6 +317,30 @@ The codebase follows these principles:
 
 ### Common Issues
 
+**No sessions found:**
+```bash
+# Check which providers are being detected
+./bin/crush-md export --db .crush/crush.db --claude-db ~/Library/Application\ Support/Claude/state.db
+
+# Verify database files exist
+ls -la .crush/crush.db
+ls -la ~/Library/Application\ Support/Claude/state.db  # macOS
+
+# Verify database has expected tables
+sqlite3 .crush/crush.db ".tables"
+```
+
+**Claude Code sessions not found:**
+The Claude database location varies by operating system:
+- **macOS**: `~/Library/Application Support/Claude/state.db`
+- **Linux**: `~/.config/Claude/state.db`
+- **Windows**: `%APPDATA%/Claude/state.db`
+
+If Claude stores data in a different location, use the `--claude-db` flag:
+```bash
+./bin/crush-md export --claude-db /path/to/claude/database.db
+```
+
 **Database not found:**
 ```bash
 # Check if the database exists
@@ -249,12 +348,6 @@ ls -la .crush/crush.db
 
 # Verify database permissions
 file .crush/crush.db
-```
-
-**No sessions found:**
-```bash
-# Verify database has sessions table
-sqlite3 .crush/crush.db ".tables"
 ```
 
 **Export fails:**
@@ -268,6 +361,16 @@ mkdir -p $(dirname your-output-file.md)
 # Ensure CGO is enabled (required for SQLite)
 export CGO_ENABLED=1
 go build ./cmd/crush-md
+```
+
+**Provider-specific issues:**
+```bash
+# Test a specific provider
+./bin/crush-md export --provider crush --db .crush/crush.db
+./bin/crush-md export --provider claude-code --claude-db ~/path/to/claude.db
+
+# Check provider detection
+./bin/crush-md export  # Will show which providers were found
 ```
 
 ## Performance

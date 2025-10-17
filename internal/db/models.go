@@ -7,12 +7,12 @@ import (
 
 // Session represents a chat session from the database
 type Session struct {
-	ID           string    `json:"id"`
-	Title        *string   `json:"title"`
-	CreatedAt    *string   `json:"created_at"`
-	Metadata     *string   `json:"metadata"`
-	Content      *string   `json:"content"`
-	MessageCount *int      `json:"message_count"`
+	ID           string  `json:"id"`
+	Title        *string `json:"title"`
+	CreatedAt    *string `json:"created_at"`
+	Metadata     *string `json:"metadata"`
+	Content      *string `json:"content"`
+	MessageCount *int    `json:"message_count"`
 }
 
 // Message represents a message within a session
@@ -40,17 +40,17 @@ func (s *Session) ParsedCreatedAt() *time.Time {
 	if s.CreatedAt == nil {
 		return nil
 	}
-	
+
 	// Try parsing as Unix timestamp first
 	if t, err := time.Parse("1", *s.CreatedAt); err == nil {
 		return &t
 	}
-	
+
 	// Try parsing as ISO format
 	if t, err := time.Parse(time.RFC3339, *s.CreatedAt); err == nil {
 		return &t
 	}
-	
+
 	return nil
 }
 
@@ -59,16 +59,16 @@ func (m *Message) ParsedCreatedAt() *time.Time {
 	if m.CreatedAt == nil {
 		return nil
 	}
-	
+
 	// Try parsing as Unix timestamp first
 	if t, err := time.Parse("1", *m.CreatedAt); err == nil {
 		return &t
 	}
-	
+
 	// Try parsing as ISO format
 	if t, err := time.Parse(time.RFC3339, *m.CreatedAt); err == nil {
 		return &t
 	}
-	
+
 	return nil
 }

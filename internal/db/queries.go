@@ -79,7 +79,7 @@ func ListMessages(db *sql.DB, sessionID string) ([]ParsedMessage, error) {
 		var id, role string
 		var partsJSON *string
 		var model, provider, createdAt *string
-		
+
 		err := rows.Scan(&id, &role, &partsJSON, &model, &provider, &createdAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan message: %w", err)
