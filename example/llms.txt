@@ -1,0 +1,2 @@
+- please read [README.md](./README.md) for projects specs
+- please read [AGENTS.md](./AGENTS.md) for AI agents & LLM specific instructions 
