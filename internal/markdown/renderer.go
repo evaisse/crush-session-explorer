@@ -3,6 +3,8 @@ package markdown
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -61,19 +63,19 @@ func formatTimestampISO(ts *string) string {
 // slugify converts text to a URL-friendly slug
 func slugify(text string) string {
 	text = strings.ToLower(strings.TrimSpace(text))
-	
+
 	// Remove non-alphanumeric characters except hyphens, spaces, and underscores
 	reg := regexp.MustCompile(`[^a-z0-9\-\s_]+`)
 	text = reg.ReplaceAllString(text, "")
-	
+
 	// Replace spaces and underscores with hyphens
 	reg = regexp.MustCompile(`[\s_]+`)
 	text = reg.ReplaceAllString(text, "-")
-	
+
 	if text == "" {
 		return "untitled"
 	}
-	
+
 	return text
 }
 
@@ -165,4 +167,19 @@ func GenerateFilename(session *db.Session) string {
 	}
 
 	return fmt.Sprintf("%s_%s.md", prefix, base)
+}
+
+// WriteFile writes content to a file, creating directories as needed
+func WriteFile(path string, content string) error {
+	// Ensure output directory exists
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	// Write file
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		return fmt.Errorf("failed to write output file: %w", err)
+	}
+
+	return nil
 }

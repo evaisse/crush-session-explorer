@@ -1,0 +1,351 @@
+# AICS Format Examples
+
+This document provides practical examples of using the AICS (AI Coding Session) interchange format for migrating sessions between different AI coding tools.
+
+## Example 1: Migrating from Crush to Another Tool (Individual Files)
+
+### Scenario
+You've been using Crush for a year and have accumulated many valuable coding sessions. Now you want to switch to Cursor or Claude Code but want to preserve your session history in an organized manner.
+
+### Solution
+
+```bash
+# Step 1: Export all sessions from Crush to AICS format as individual files
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out ~/ai-sessions \
+  --provider "Crush" \
+  --individual \
+  --limit 500
+
+# Output:
+# Found 150 sessions to export
+# 📱 Client ID: fedcba98-7654-3210-fedc-ba9876543210
+# ✅ Exported 150 sessions to individual files in ~/ai-sessions
+# 📊 Format: AICS v1.0 (AI Coding Session Interchange Format)
+# 📁 Sessions organized by date: YYYY/MM/DD/
+# 💡 Each session has a unique UUID v7 identifier
+# 
+# 📄 Example files:
+#   - 2024/01/15/01234567-89ab-7def-0123-456789abcdef.aics.json
+#   - 2024/01/16/fedcba98-7654-7321-fedc-ba9876543210.aics.json
+#   - 2024/01/17/abcdef01-2345-7678-9abc-def012345678.aics.json
+#   ... and 147 more
+
+# Your sessions are now organized in folders by date:
+# ~/ai-sessions/
+# ├── 2024/
+# │   ├── 01/
+# │   │   ├── 15/
+# │   │   │   ├── 01234567-89ab-7def-0123-456789abcdef.aics.json
+# │   │   │   └── fedcba98-7654-7321-fedc-ba9876543210.aics.json
+# │   │   ├── 16/
+# │   │   │   └── abcdef01-2345-7678-9abc-def012345678.aics.json
+
+# Step 2: Import individual sessions or convert to markdown
+crush-md import-aics \
+  --input ~/ai-sessions/2024/01/15/01234567-89ab-7def-0123-456789abcdef.aics.json \
+  --format markdown \
+  --out ~/Documents/ai-sessions-archive/
+```
+
+## Example 1b: Single File Export (Original Method)
+
+```bash
+# Export all sessions to a single file
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out my-crush-sessions.aics.json \
+  --provider "Crush" \
+  --limit 500
+
+# Output:
+# Found 150 sessions to export
+# 📱 Client ID: fedcba98-7654-3210-fedc-ba9876543210
+# ✅ Exported 150 sessions to my-crush-sessions.aics.json
+# 📊 Format: AICS v1.0 (AI Coding Session Interchange Format)
+# 💡 This file can be imported into other AI coding tools that support AICS
+
+# Convert to markdown for reference or import into new tool
+crush-md import-aics \
+  --input my-crush-sessions.aics.json \
+  --format markdown \
+  --out ~/Documents/ai-sessions-archive/
+```
+
+## Example 2: Sharing Sessions with Team Members
+
+### Scenario
+Your team uses different AI coding tools. You want to share some helpful sessions with your teammates.
+
+### Solution
+
+```bash
+# Export specific recent sessions
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out team-sessions.aics.json \
+  --limit 10
+
+# Share the AICS file with team members
+# They can import it regardless of their AI tool:
+
+# Team member using Cursor (converts to markdown)
+crush-md import-aics \
+  --input team-sessions.aics.json \
+  --format markdown \
+  --out ./shared-sessions/
+
+# Team member who prefers HTML format
+crush-md import-aics \
+  --input team-sessions.aics.json \
+  --format html \
+  --out ./shared-sessions/
+```
+
+## Example 3: Long-term Archival
+
+### Scenario
+You want to preserve your AI coding sessions for future reference, compliance, or training purposes.
+
+### Solution
+
+```bash
+# Create monthly archives
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out archives/sessions-2024-01.aics.json \
+  --limit 1000
+
+# Store the AICS file in version control or backup system
+git add archives/sessions-2024-01.aics.json
+git commit -m "Archive AI coding sessions for January 2024"
+
+# Later, when needed, convert to readable format
+crush-md import-aics \
+  --input archives/sessions-2024-01.aics.json \
+  --format html \
+  --out ./review/january-2024/
+```
+
+## Example 4: Testing a New AI Tool
+
+### Scenario
+You want to test a new AI coding tool but don't want to lose access to your existing sessions.
+
+### Solution
+
+```bash
+# Export your current sessions to AICS
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out backup-sessions.aics.json
+
+# Try the new tool for a few weeks
+# ... (use new tool) ...
+
+# If you want to go back, your sessions are preserved in AICS format
+# You can always convert them to any format supported by your tools
+
+# Generate HTML reports of your old sessions for reference
+crush-md import-aics \
+  --input backup-sessions.aics.json \
+  --format html \
+  --out ./session-reference/
+```
+
+## Example 5: Cross-Tool Workflow
+
+### Scenario
+You use different AI tools for different projects and want to consolidate all your session history.
+
+### Solution
+
+```bash
+# Export from Crush (Tool A)
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out crush-sessions.aics.json \
+  --provider "Crush"
+
+# Export from Cursor (Tool B) - if supported
+# cursor-export --format aics --out cursor-sessions.aics.json
+
+# Merge AICS files (manual or with script)
+# Then import the consolidated sessions
+
+crush-md import-aics \
+  --input consolidated-sessions.aics.json \
+  --format markdown \
+  --out ./all-sessions/
+```
+
+## AICS File Structure Example
+
+Here's what a typical AICS file looks like with the latest features:
+
+```json
+{
+  "version": "1.0",
+  "creator": {
+    "name": "crush-session-explorer",
+    "version": "v1.0.1",
+    "comment": "Exported from Crush database"
+  },
+  "browser": {
+    "name": "Crush",
+    "comment": "Original AI coding tool"
+  },
+  "log": {
+    "version": "1.0",
+    "creator": {
+      "name": "crush-session-explorer",
+      "version": "v1.0.1"
+    },
+    "browser": {
+      "name": "Crush"
+    },
+    "sessions": [
+      {
+        "id": "01234567-89ab-7def-0123-456789abcdef",
+        "clientId": "fedcba98-7654-3210-fedc-ba9876543210",
+        "title": "Refactoring Authentication Module",
+        "startedAt": "2024-01-15T14:30:00Z",
+        "updatedAt": "2024-01-15T16:45:00Z",
+        "gitRefs": {
+          "branches": ["feature/auth-refactor", "main"],
+          "issues": ["#234", "myorg/auth-service#567"],
+          "commits": ["abc1234def"],
+          "tags": ["v2.0.0-beta"],
+          "repos": ["myorg/auth-service"]
+        },
+        "messages": [
+          {
+            "id": "msg-001",
+            "timestamp": "2024-01-15T14:30:00Z",
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "How can I refactor this authentication code for issue #234?"
+              }
+            ]
+          },
+          {
+            "id": "msg-002",
+            "timestamp": "2024-01-15T14:32:00Z",
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "I'll help you improve the security of your authentication code. Let me analyze the files..."
+              }
+            ],
+            "model": "claude-3-opus",
+            "provider": "anthropic",
+            "mcp": {
+              "version": "1.0",
+              "tools": [
+                {
+                  "name": "read_file",
+                  "input": {"path": "src/auth/handler.go"},
+                  "output": "package auth\n..."
+                }
+              ],
+              "resources": [
+                {
+                  "uri": "file:///workspace/src/auth/handler.go",
+                  "name": "handler.go",
+                  "mimeType": "text/x-go"
+                }
+              ]
+            }
+          }
+        ],
+        "metadata": {
+          "message_count": 2,
+          "project": "auth-service",
+          "language": "go"
+        }
+      }
+    ]
+  }
+}
+```
+
+### New Fields Explained
+
+**Git References (`gitRefs`)**: Tracks development context
+- `branches`: Git branches mentioned (e.g., "main", "feature/auth")
+- `issues`: Issue/PR references (e.g., "#234", "org/repo#567")
+- `commits`: Commit SHAs discussed
+- `tags`: Git tags referenced
+- `repos`: Repository identifiers
+
+**Model Context Protocol (`mcp`)**: Documents AI tool usage
+- `tools`: Tools invoked (read_file, search, git commands, etc.)
+- `resources`: Resources accessed (files, APIs, databases)
+- `prompts`: Prompts used to guide the AI
+- Full context for reproducibility and auditing
+
+## Integration with Other Tools
+
+### For Tool Developers
+
+If you're developing an AI coding tool and want to support AICS format:
+
+1. **Read the specification**: See [AICS_FORMAT.md](AICS_FORMAT.md)
+2. **Implement export**: Convert your internal format to AICS JSON
+3. **Implement import**: Parse AICS JSON and convert to your internal format
+4. **Test with examples**: Use the sample files provided
+
+### Sample Import Code (Conceptual)
+
+```go
+// Import AICS file
+archive, err := interchange.ImportFromFile("sessions.aics.json")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Validate the archive
+if err := interchange.ValidateArchive(archive); err != nil {
+    log.Fatal(err)
+}
+
+// Convert to your tool's format
+for _, session := range archive.Log.Sessions {
+    // Process each session
+    for _, message := range session.Messages {
+        // Import message into your database
+        importMessage(message)
+    }
+}
+```
+
+## Benefits Summary
+
+### For Users
+- ✅ **Freedom to switch tools** without losing history
+- ✅ **Portable data** in vendor-neutral format
+- ✅ **Long-term preservation** of valuable conversations
+- ✅ **Easy sharing** with team members
+
+### For Developers
+- ✅ **Standard format** reduces custom integration work
+- ✅ **Interoperability** with other AI coding tools
+- ✅ **Clear specification** makes implementation straightforward
+- ✅ **Community support** for format evolution
+
+## Next Steps
+
+1. Try exporting your sessions: `crush-md export-aics --help`
+2. Read the format specification: [AICS_FORMAT.md](AICS_FORMAT.md)
+3. Import sessions from other tools: `crush-md import-aics --help`
+4. Share your feedback and contribute to the format evolution
+
+## Resources
+
+- [AICS Format Specification](AICS_FORMAT.md)
+- [HAR Format Specification](<https://en.wikipedia.org/wiki/HAR_(file_format)>) (inspiration)
+- [ISO 8601 Date/Time Format](https://en.wikipedia.org/wiki/ISO_8601)
