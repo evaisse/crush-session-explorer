@@ -54,6 +54,7 @@ type Session struct {
 	StartedAt *time.Time `json:"startedAt,omitempty"` // When the session started (ISO 8601)
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"` // When the session was last updated
 	Messages  []Message  `json:"messages"`            // Array of messages in chronological order
+	GitRefs   *GitRefs   `json:"gitRefs,omitempty"`   // Git references mentioned during session
 	Metadata  Metadata   `json:"metadata,omitempty"`  // Additional session metadata
 	Comment   string     `json:"comment,omitempty"`   // Additional information
 }
@@ -66,6 +67,7 @@ type Message struct {
 	Content   []Content  `json:"content"`             // Message content parts
 	Model     string     `json:"model,omitempty"`     // AI model used (e.g., "claude-3-opus", "gpt-4")
 	Provider  string     `json:"provider,omitempty"`  // Provider name (e.g., "anthropic", "openai")
+	MCP       *MCPInfo   `json:"mcp,omitempty"`       // Model Context Protocol information
 	Metadata  Metadata   `json:"metadata,omitempty"`  // Additional message metadata
 	Comment   string     `json:"comment,omitempty"`   // Additional information
 }
@@ -82,6 +84,48 @@ type Content struct {
 
 // Metadata represents flexible key-value metadata
 type Metadata map[string]interface{}
+
+// GitRefs contains git references mentioned during the session
+type GitRefs struct {
+	Branches []string `json:"branches,omitempty"` // Git branches mentioned (e.g., "main", "feature/new-api")
+	Issues   []string `json:"issues,omitempty"`   // Issues/PRs mentioned (e.g., "#123", "org/repo#456")
+	Commits  []string `json:"commits,omitempty"`  // Commit SHAs mentioned (e.g., "abc1234", "full-sha")
+	Tags     []string `json:"tags,omitempty"`     // Git tags mentioned (e.g., "v1.0.0")
+	Repos    []string `json:"repos,omitempty"`    // Repository references (e.g., "owner/repo")
+}
+
+// MCPInfo contains Model Context Protocol information
+type MCPInfo struct {
+	Version   string                 `json:"version,omitempty"`   // MCP protocol version (e.g., "1.0")
+	Tools     []MCPTool              `json:"tools,omitempty"`     // MCP tools used in this message
+	Resources []MCPResource          `json:"resources,omitempty"` // MCP resources accessed
+	Prompts   []MCPPrompt            `json:"prompts,omitempty"`   // MCP prompts used
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`  // Additional MCP metadata
+}
+
+// MCPTool represents a Model Context Protocol tool invocation
+type MCPTool struct {
+	Name        string                 `json:"name"`                  // Tool name
+	Description string                 `json:"description,omitempty"` // Tool description
+	Input       map[string]interface{} `json:"input,omitempty"`       // Tool input parameters
+	Output      interface{}            `json:"output,omitempty"`      // Tool output/result
+}
+
+// MCPResource represents a Model Context Protocol resource
+type MCPResource struct {
+	URI         string                 `json:"uri"`                   // Resource URI
+	Name        string                 `json:"name,omitempty"`        // Resource name
+	Description string                 `json:"description,omitempty"` // Resource description
+	MimeType    string                 `json:"mimeType,omitempty"`    // Resource MIME type
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`    // Additional resource metadata
+}
+
+// MCPPrompt represents a Model Context Protocol prompt
+type MCPPrompt struct {
+	Name        string                 `json:"name"`                  // Prompt name
+	Description string                 `json:"description,omitempty"` // Prompt description
+	Arguments   map[string]interface{} `json:"arguments,omitempty"`   // Prompt arguments
+}
 
 // ProviderInfo contains information about the original provider
 type ProviderInfo struct {

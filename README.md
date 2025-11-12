@@ -12,6 +12,10 @@ This tool allows you to extract and export individual chat sessions from Crush's
 - 📝 **Markdown Export**: Clean conversion to Markdown with YAML frontmatter
 - 🔄 **AICS Format Support**: Export/import sessions using the standardized AI Coding Session interchange format
 - 🔀 **Cross-Tool Migration**: Migrate sessions between different AI coding tools (Cursor, Claude Code, etc.)
+- 🆔 **UUID v7 Session IDs**: Time-ordered, globally unique identifiers for sessions
+- 👤 **Client ID Support**: Per-client identifier for session grouping across devices
+- 🌿 **Git References Tracking**: Track branches, issues, commits, and repos mentioned in sessions
+- 🔧 **MCP Support**: Model Context Protocol information for tool usage and resource access
 - 🔍 **Interactive Session Selection**: Browse and select sessions interactively
 - 📅 **Timestamp Formatting**: Automatic timestamp conversion to readable formats
 - 🏷️ **Metadata Preservation**: Session metadata and message details preserved
@@ -221,11 +225,36 @@ crush-md import-aics --input team-sessions.aics.json --format html
 For detailed information about the AICS format specification, see [AICS_FORMAT.md](AICS_FORMAT.md).
 
 The AICS format is inspired by the HAR (HTTP Archive) format and provides:
-- Standardized JSON structure
-- ISO 8601 timestamps
-- Support for multiple message types (text, tool calls, tool results)
-- Flexible metadata system
-- Version control for format evolution
+- **Standardized JSON structure**: Consistent format across all tools
+- **ISO 8601 timestamps**: Universal time representation
+- **UUID v7 session IDs**: Time-ordered, globally unique identifiers
+- **Client ID support**: Group sessions by machine/client
+- **Git references tracking**: Track branches, issues, commits, tags, and repos mentioned
+- **MCP (Model Context Protocol) support**: Document tool usage, resource access, and prompts
+- **Multiple message types**: Text, tool calls, tool results, code, images
+- **Flexible metadata system**: Extensible for future enhancements
+- **Version control**: Format evolution support
+
+**New in AICS format:**
+- **`gitRefs`** field on sessions tracks:
+  - Branches mentioned (e.g., "main", "feature/auth")
+  - Issues/PRs referenced (e.g., "#123", "org/repo#456")
+  - Commit SHAs discussed
+  - Git tags referenced
+  - Repository identifiers
+
+- **`mcp`** field on messages documents Model Context Protocol usage:
+  - Tools invoked (file operations, git commands, etc.)
+  - Resources accessed (files, APIs, databases)
+  - Prompts used
+  - Full context for reproducibility
+
+These additions make it easier to:
+- Link sessions to specific development work
+- Understand what code/files were involved
+- Reproduce AI assistant behavior
+- Audit tool and resource usage
+- Migrate sessions with full context
 
 ## Project Structure
 

@@ -182,7 +182,7 @@ crush-md import-aics \
 
 ## AICS File Structure Example
 
-Here's what a typical AICS file looks like:
+Here's what a typical AICS file looks like with the latest features:
 
 ```json
 {
@@ -207,10 +207,18 @@ Here's what a typical AICS file looks like:
     },
     "sessions": [
       {
-        "id": "session-abc123",
+        "id": "01234567-89ab-7def-0123-456789abcdef",
+        "clientId": "fedcba98-7654-3210-fedc-ba9876543210",
         "title": "Refactoring Authentication Module",
         "startedAt": "2024-01-15T14:30:00Z",
         "updatedAt": "2024-01-15T16:45:00Z",
+        "gitRefs": {
+          "branches": ["feature/auth-refactor", "main"],
+          "issues": ["#234", "myorg/auth-service#567"],
+          "commits": ["abc1234def"],
+          "tags": ["v2.0.0-beta"],
+          "repos": ["myorg/auth-service"]
+        },
         "messages": [
           {
             "id": "msg-001",
@@ -219,7 +227,7 @@ Here's what a typical AICS file looks like:
             "content": [
               {
                 "type": "text",
-                "text": "How can I refactor this authentication code to be more secure?"
+                "text": "How can I refactor this authentication code for issue #234?"
               }
             ]
           },
@@ -230,23 +238,55 @@ Here's what a typical AICS file looks like:
             "content": [
               {
                 "type": "text",
-                "text": "I'll help you improve the security of your authentication code. Here are several recommendations..."
+                "text": "I'll help you improve the security of your authentication code. Let me analyze the files..."
               }
             ],
             "model": "claude-3-opus",
-            "provider": "anthropic"
+            "provider": "anthropic",
+            "mcp": {
+              "version": "1.0",
+              "tools": [
+                {
+                  "name": "read_file",
+                  "input": {"path": "src/auth/handler.go"},
+                  "output": "package auth\n..."
+                }
+              ],
+              "resources": [
+                {
+                  "uri": "file:///workspace/src/auth/handler.go",
+                  "name": "handler.go",
+                  "mimeType": "text/x-go"
+                }
+              ]
+            }
           }
         ],
         "metadata": {
           "message_count": 2,
           "project": "auth-service",
-          "language": "python"
+          "language": "go"
         }
       }
     ]
   }
 }
 ```
+
+### New Fields Explained
+
+**Git References (`gitRefs`)**: Tracks development context
+- `branches`: Git branches mentioned (e.g., "main", "feature/auth")
+- `issues`: Issue/PR references (e.g., "#234", "org/repo#567")
+- `commits`: Commit SHAs discussed
+- `tags`: Git tags referenced
+- `repos`: Repository identifiers
+
+**Model Context Protocol (`mcp`)**: Documents AI tool usage
+- `tools`: Tools invoked (read_file, search, git commands, etc.)
+- `resources`: Resources accessed (files, APIs, databases)
+- `prompts`: Prompts used to guide the AI
+- Full context for reproducibility and auditing
 
 ## Integration with Other Tools
 
