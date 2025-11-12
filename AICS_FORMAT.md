@@ -100,7 +100,8 @@ Represents a single AI coding session:
 
 ```json
 {
-  "id": "unique-session-id",
+  "id": "01234567-89ab-7def-0123-456789abcdef",
+  "clientId": "fedcba98-7654-3210-fedc-ba9876543210",
   "title": "Session Title",
   "startedAt": "2024-01-15T14:30:00Z",
   "updatedAt": "2024-01-15T15:45:00Z",
@@ -115,13 +116,20 @@ Represents a single AI coding session:
 ```
 
 Fields:
-- `id` (string, required): Unique identifier for the session
+- `id` (string, required): Unique identifier for the session (UUID v7 recommended)
+- `clientId` (string, optional): Client/machine identifier for session grouping
 - `title` (string, optional): Human-readable session title
 - `startedAt` (ISO 8601 timestamp, optional): When the session started
 - `updatedAt` (ISO 8601 timestamp, optional): Last update time
 - `messages` (array, required): Array of message objects
 - `metadata` (object, optional): Flexible key-value pairs for additional data
 - `comment` (string, optional): Additional information
+
+**Note on Session IDs**: It is recommended to use UUID v7 for session IDs. UUID v7 provides:
+- Time-ordered identifiers (sortable by creation time)
+- Globally unique across all systems
+- Better database indexing performance
+- Embedded timestamp information
 
 ### Message Object
 

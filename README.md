@@ -60,11 +60,34 @@ make build-all  # Creates binaries for all platforms in bin/
 
 Export sessions to the standardized AICS (AI Coding Session) format for migration to other tools:
 
+**Single file export (all sessions):**
 ```bash
 ./bin/crush-md export-aics --db ./.crush/crush.db --out sessions.aics.json
 ```
 
-This creates a vendor-neutral JSON file that can be imported into other AI coding tools.
+**Individual files with UUID v7 and date-based folders:**
+```bash
+./bin/crush-md export-aics --db ./.crush/crush.db --out sessions --individual
+```
+
+This creates individual session files organized by date (YYYY/MM/DD/) with:
+- UUID v7 session identifiers
+- Per-client ID for session grouping
+- Each session in its own file named after the session ID
+
+Example folder structure:
+```
+sessions/
+├── 2024/
+│   ├── 01/
+│   │   ├── 15/
+│   │   │   ├── 01234567-89ab-7def-0123-456789abcdef.aics.json
+│   │   │   └── fedcba98-7654-7321-fedc-ba9876543210.aics.json
+│   │   └── 16/
+│   │       └── abcdef01-2345-7678-9abc-def012345678.aics.json
+```
+
+This vendor-neutral JSON format can be imported into other AI coding tools.
 
 ### Import from AICS Format
 

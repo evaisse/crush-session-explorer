@@ -2,15 +2,57 @@
 
 This document provides practical examples of using the AICS (AI Coding Session) interchange format for migrating sessions between different AI coding tools.
 
-## Example 1: Migrating from Crush to Another Tool
+## Example 1: Migrating from Crush to Another Tool (Individual Files)
 
 ### Scenario
-You've been using Crush for a year and have accumulated many valuable coding sessions. Now you want to switch to Cursor or Claude Code but want to preserve your session history.
+You've been using Crush for a year and have accumulated many valuable coding sessions. Now you want to switch to Cursor or Claude Code but want to preserve your session history in an organized manner.
 
 ### Solution
 
 ```bash
-# Step 1: Export all sessions from Crush to AICS format
+# Step 1: Export all sessions from Crush to AICS format as individual files
+crush-md export-aics \
+  --db ~/.crush/crush.db \
+  --out ~/ai-sessions \
+  --provider "Crush" \
+  --individual \
+  --limit 500
+
+# Output:
+# Found 150 sessions to export
+# 📱 Client ID: fedcba98-7654-3210-fedc-ba9876543210
+# ✅ Exported 150 sessions to individual files in ~/ai-sessions
+# 📊 Format: AICS v1.0 (AI Coding Session Interchange Format)
+# 📁 Sessions organized by date: YYYY/MM/DD/
+# 💡 Each session has a unique UUID v7 identifier
+# 
+# 📄 Example files:
+#   - 2024/01/15/01234567-89ab-7def-0123-456789abcdef.aics.json
+#   - 2024/01/16/fedcba98-7654-7321-fedc-ba9876543210.aics.json
+#   - 2024/01/17/abcdef01-2345-7678-9abc-def012345678.aics.json
+#   ... and 147 more
+
+# Your sessions are now organized in folders by date:
+# ~/ai-sessions/
+# ├── 2024/
+# │   ├── 01/
+# │   │   ├── 15/
+# │   │   │   ├── 01234567-89ab-7def-0123-456789abcdef.aics.json
+# │   │   │   └── fedcba98-7654-7321-fedc-ba9876543210.aics.json
+# │   │   ├── 16/
+# │   │   │   └── abcdef01-2345-7678-9abc-def012345678.aics.json
+
+# Step 2: Import individual sessions or convert to markdown
+crush-md import-aics \
+  --input ~/ai-sessions/2024/01/15/01234567-89ab-7def-0123-456789abcdef.aics.json \
+  --format markdown \
+  --out ~/Documents/ai-sessions-archive/
+```
+
+## Example 1b: Single File Export (Original Method)
+
+```bash
+# Export all sessions to a single file
 crush-md export-aics \
   --db ~/.crush/crush.db \
   --out my-crush-sessions.aics.json \
@@ -19,30 +61,16 @@ crush-md export-aics \
 
 # Output:
 # Found 150 sessions to export
+# 📱 Client ID: fedcba98-7654-3210-fedc-ba9876543210
 # ✅ Exported 150 sessions to my-crush-sessions.aics.json
 # 📊 Format: AICS v1.0 (AI Coding Session Interchange Format)
 # 💡 This file can be imported into other AI coding tools that support AICS
 
-# Step 2: Convert to markdown for reference or import into new tool
+# Convert to markdown for reference or import into new tool
 crush-md import-aics \
   --input my-crush-sessions.aics.json \
   --format markdown \
   --out ~/Documents/ai-sessions-archive/
-
-# Output:
-# 📥 Importing from my-crush-sessions.aics.json...
-# ✅ Successfully imported AICS archive
-# 📊 Format version: 1.0
-# 🔧 Created by: crush-session-explorer v1.0.1
-# 🌐 Original tool: Crush
-# 📝 Sessions: 150
-# 
-# 📤 Exporting sessions to markdown format...
-#   ✓ 2024-01-15_14-30_refactoring-auth.md
-#   ✓ 2024-01-16_10-00_database-optimization.md
-#   ... (148 more)
-# 
-# ✅ Successfully exported 150/150 sessions to ~/Documents/ai-sessions-archive/
 ```
 
 ## Example 2: Sharing Sessions with Team Members

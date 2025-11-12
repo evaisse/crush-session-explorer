@@ -3,10 +3,14 @@ package interchange
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"crush-session-explorer/internal/db"
+
+	"github.com/google/uuid"
 )
 
 const toolVersion = "v1.0.1"
@@ -177,4 +181,131 @@ func (a *Archive) ToJSON() ([]byte, error) {
 // ToJSONCompact converts the archive to compact JSON format
 func (a *Archive) ToJSONCompact() ([]byte, error) {
 	return json.Marshal(a)
+}
+
+// GenerateSessionID generates a UUID v7 for a session
+func GenerateSessionID() string {
+	return uuid.NewString() // UUID v7 is default in newer versions
+}
+
+// GetClientID retrieves or generates a persistent client ID
+func GetClientID() (string, error) {
+	// Try to get from environment first
+	if clientID := os.Getenv("CRUSH_CLIENT_ID"); clientID != "" {
+		return clientID, nil
+	}
+
+	// Try to read from config file
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		// Fall back to generating a new one
+		return uuid.NewString(), nil
+	}
+
+	clientIDPath := filepath.Join(configDir, "crush-session-explorer", "client-id")
+
+	// Try to read existing client ID
+	if data, err := os.ReadFile(clientIDPath); err == nil {
+		return strings.TrimSpace(string(data)), nil
+	}
+
+	// Generate new client ID
+	clientID := uuid.NewString()
+
+	// Try to save it for future use
+	if err := os.MkdirAll(filepath.Dir(clientIDPath), 0755); err == nil {
+		_ = os.WriteFile(clientIDPath, []byte(clientID), 0644)
+	}
+
+	return clientID, nil
+}
+
+// ExportSessionToFile exports a single session to a file in a date-based folder structure
+func ExportSessionToFile(session *Session, baseDir string, providerName string) (string, error) {
+	if session.StartedAt == nil {
+		return "", fmt.Errorf("session has no start time")
+	}
+
+	// Create folder structure: baseDir/YYYY/MM/DD/
+	year := session.StartedAt.Format("2006")
+	month := session.StartedAt.Format("01")
+	day := session.StartedAt.Format("02")
+
+	sessionDir := filepath.Join(baseDir, year, month, day)
+	if err := os.MkdirAll(sessionDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create session directory: %w", err)
+	}
+
+	// Create a single-session archive
+	archive := &Archive{
+		Version: FormatVersion,
+		Creator: Creator{
+			Name:    "crush-session-explorer",
+			Version: toolVersion,
+			Comment: "Exported from Crush database",
+		},
+		Browser: &Browser{
+			Name:    providerName,
+			Comment: "Original AI coding tool",
+		},
+		Log: Log{
+			Version: FormatVersion,
+			Creator: Creator{
+				Name:    "crush-session-explorer",
+				Version: toolVersion,
+			},
+			Browser: &Browser{
+				Name: providerName,
+			},
+			Sessions: []Session{*session},
+		},
+	}
+
+	// Convert to JSON
+	jsonData, err := archive.ToJSON()
+	if err != nil {
+		return "", fmt.Errorf("failed to convert to JSON: %w", err)
+	}
+
+	// Create filename based on session ID
+	filename := fmt.Sprintf("%s.aics.json", session.ID)
+	filePath := filepath.Join(sessionDir, filename)
+
+	// Write file
+	if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+		return "", fmt.Errorf("failed to write file: %w", err)
+	}
+
+	return filePath, nil
+}
+
+// ExportSessionsIndividually exports each session to its own file in a date-based folder structure
+func ExportSessionsIndividually(sessions []db.Session, messages map[string][]db.ParsedMessage, baseDir string, providerName string, clientID string) ([]string, error) {
+	var exportedFiles []string
+
+	for _, dbSession := range sessions {
+		// Convert session
+		session, err := convertSession(dbSession, messages[dbSession.ID])
+		if err != nil {
+			return exportedFiles, fmt.Errorf("failed to convert session %s: %w", dbSession.ID, err)
+		}
+
+		// Generate new UUID v7 for the session
+		session.ID = GenerateSessionID()
+
+		// Set client ID
+		if clientID != "" {
+			session.ClientID = clientID
+		}
+
+		// Export to file
+		filePath, err := ExportSessionToFile(session, baseDir, providerName)
+		if err != nil {
+			return exportedFiles, fmt.Errorf("failed to export session %s: %w", session.ID, err)
+		}
+
+		exportedFiles = append(exportedFiles, filePath)
+	}
+
+	return exportedFiles, nil
 }

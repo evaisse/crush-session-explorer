@@ -48,7 +48,8 @@ type Log struct {
 
 // Session represents a single AI coding session
 type Session struct {
-	ID        string     `json:"id"`                  // Unique session identifier
+	ID        string     `json:"id"`                  // Unique session identifier (UUID v7)
+	ClientID  string     `json:"clientId,omitempty"`  // Client/machine identifier
 	Title     string     `json:"title,omitempty"`     // Session title
 	StartedAt *time.Time `json:"startedAt,omitempty"` // When the session started (ISO 8601)
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"` // When the session was last updated
