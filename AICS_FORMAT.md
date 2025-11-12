@@ -173,11 +173,11 @@ Represents a single message in a session:
 {
   "id": "unique-message-id",
   "timestamp": "2024-01-15T14:30:00Z",
-  "role": "user",
+  "role": "assistant",
   "content": [
     {
       "type": "text",
-      "text": "Can you help me refactor this function?"
+      "text": "I'll help you refactor this function..."
     }
   ],
   "model": "claude-3-opus",
@@ -199,6 +199,16 @@ Represents a single message in a session:
       }
     ]
   },
+  "thinking": {
+    "content": "Let me analyze this function... I should consider...",
+    "summary": "Analyzed function complexity and identified refactoring opportunities",
+    "tokensUsed": 150,
+    "steps": [
+      "Read the function code",
+      "Identify code smells",
+      "Consider refactoring patterns"
+    ]
+  },
   "metadata": {},
   "comment": "Optional additional information"
 }
@@ -213,15 +223,18 @@ Fields:
   - `"system"`: System message
   - `"tool"`: Tool execution message
 - `content` (array, required): Array of content parts
-- `model` (string, optional): AI model identifier (e.g., "gpt-4", "claude-3-opus")
+- `model` (string, optional): AI model identifier (e.g., "gpt-4", "claude-3-opus", "o1-preview")
 - `provider` (string, optional): Provider name (e.g., "openai", "anthropic")
-- `mcp` (object, optional): Model Context Protocol information
+- `mcp` (object, optional): Model Context Protocol information (attached per-message)
+- `thinking` (object, optional): Thinking/reasoning process for extended thinking models
 - `metadata` (object, optional): Additional message-specific data
 - `comment` (string, optional): Additional information
 
+**Note on MCP**: The MCP field is attached at the message level because each message may use different MCP tools, resources, or prompts. This allows tracking exactly which tools were invoked for each AI response.
+
 ### Model Context Protocol (MCP)
 
-The `mcp` field contains information about Model Context Protocol usage in AI coding tools. MCP is a protocol that allows AI assistants to interact with external tools, resources, and prompts in a standardized way.
+The `mcp` field contains information about Model Context Protocol usage in AI coding tools. MCP is a protocol that allows AI assistants to interact with external tools, resources, and prompts in a standardized way. **This field is attached to individual messages** because different messages in the same session may use different tools and resources.
 
 **MCP Object Structure:**
 
@@ -307,6 +320,50 @@ This is particularly useful for:
 - Auditing AI tool usage
 - Migrating sessions between different AI coding tools that support MCP
 
+### Thinking/Reasoning Mode
+
+The `thinking` field captures the reasoning process for extended thinking models (like OpenAI's o1 series). This field is attached at the message level and contains the model's internal reasoning.
+
+**Thinking Object Structure:**
+
+```json
+{
+  "content": "Let me analyze this problem step by step. First, I need to understand...",
+  "summary": "Analyzed the problem complexity and identified optimal solution approach",
+  "tokensUsed": 2500,
+  "durationMs": 15000,
+  "steps": [
+    "Analyzed problem requirements",
+    "Considered multiple approaches",
+    "Evaluated trade-offs",
+    "Selected optimal solution"
+  ],
+  "metadata": {
+    "model": "o1-preview",
+    "reasoningIntensity": "high"
+  }
+}
+```
+
+**Thinking Fields:**
+- `content` (string, optional): Raw thinking/reasoning content (may be abbreviated or summarized)
+- `summary` (string, optional): Brief summary of the thinking process
+- `tokensUsed` (integer, optional): Number of tokens consumed during thinking
+- `durationMs` (integer, optional): Duration of thinking process in milliseconds
+- `steps` (array of strings, optional): Individual reasoning steps taken
+- `metadata` (object, optional): Additional thinking-specific metadata
+
+**Use Cases:**
+
+The thinking field enables:
+- **Understanding AI Reasoning**: See how the AI arrived at its conclusions
+- **Debugging Complex Responses**: Understand why the AI chose a particular approach
+- **Cost Tracking**: Monitor token usage for extended thinking
+- **Quality Assessment**: Evaluate the depth of reasoning for different queries
+- **Model Comparison**: Compare reasoning processes across different models
+
+**Note**: Not all models support extended thinking. This field should only be populated for models that provide explicit thinking/reasoning output (e.g., OpenAI o1-preview, o1-mini, or similar future models).
+
 ### Content Object
 
 Represents a content part within a message:
@@ -329,6 +386,7 @@ Fields:
   - `"tool_result"`: Result from tool execution
   - `"code"`: Code snippet
   - `"image"`: Image content
+  - `"thinking"`: Thinking/reasoning content (for models with extended thinking)
 - `text` (string, optional): Text content
 - `data` (object, optional): Structured data for tool calls, results, etc.
 - `mimeType` (string, optional): MIME type for content

@@ -185,7 +185,12 @@ func (a *Archive) ToJSONCompact() ([]byte, error) {
 
 // GenerateSessionID generates a UUID v7 for a session
 func GenerateSessionID() string {
-	return uuid.NewString() // UUID v7 is default in newer versions
+	id, err := uuid.NewV7()
+	if err != nil {
+		// Fallback to UUID v4 if v7 generation fails
+		return uuid.NewString()
+	}
+	return id.String()
 }
 
 // GetClientID retrieves or generates a persistent client ID
@@ -209,7 +214,7 @@ func GetClientID() (string, error) {
 		return strings.TrimSpace(string(data)), nil
 	}
 
-	// Generate new client ID
+	// Generate new client ID (using v4 for client ID is fine)
 	clientID := uuid.NewString()
 
 	// Try to save it for future use

@@ -68,13 +68,14 @@ type Message struct {
 	Model     string     `json:"model,omitempty"`     // AI model used (e.g., "claude-3-opus", "gpt-4")
 	Provider  string     `json:"provider,omitempty"`  // Provider name (e.g., "anthropic", "openai")
 	MCP       *MCPInfo   `json:"mcp,omitempty"`       // Model Context Protocol information
+	Thinking  *Thinking  `json:"thinking,omitempty"`  // Thinking/reasoning process (for extended thinking models)
 	Metadata  Metadata   `json:"metadata,omitempty"`  // Additional message metadata
 	Comment   string     `json:"comment,omitempty"`   // Additional information
 }
 
 // Content represents a content part within a message
 type Content struct {
-	Type     string   `json:"type"`               // Content type: "text", "tool_call", "tool_result", "code", "image"
+	Type     string   `json:"type"`               // Content type: "text", "tool_call", "tool_result", "code", "image", "thinking"
 	Text     string   `json:"text,omitempty"`     // Text content
 	Data     Metadata `json:"data,omitempty"`     // Structured data for tool calls, results, etc.
 	MimeType string   `json:"mimeType,omitempty"` // MIME type for binary/encoded content
@@ -125,6 +126,16 @@ type MCPPrompt struct {
 	Name        string                 `json:"name"`                  // Prompt name
 	Description string                 `json:"description,omitempty"` // Prompt description
 	Arguments   map[string]interface{} `json:"arguments,omitempty"`   // Prompt arguments
+}
+
+// Thinking represents the thinking/reasoning process for extended thinking models
+type Thinking struct {
+	Content    string                 `json:"content,omitempty"`    // Raw thinking/reasoning content
+	Summary    string                 `json:"summary,omitempty"`    // Summary of thinking process
+	TokensUsed int                    `json:"tokensUsed,omitempty"` // Number of tokens used in thinking
+	DurationMs int                    `json:"durationMs,omitempty"` // Duration of thinking in milliseconds
+	Steps      []string               `json:"steps,omitempty"`      // Individual reasoning steps
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`   // Additional thinking metadata
 }
 
 // ProviderInfo contains information about the original provider
